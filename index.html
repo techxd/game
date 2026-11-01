@@ -1940,6 +1940,11 @@ fireGroup.position.set(0, 0, 2.5);
 scene.add(fireGroup);
 
 /* --------------------------------------------------------------------------
+   FACILITY CLEAR SIGNAGE & INTERACTIVE 3D STATIONS (全設施清晰立牌與實體工作台)
+   -------------------------------------------------------------------------- */
+const allFacilitySigns = [];
+
+/* --------------------------------------------------------------------------
    CENTRAL WEAPON FORGE & WEAPON RACK (營區中央武器鍛造台)
    -------------------------------------------------------------------------- */
 const weaponForgeGroup = new THREE.Group();
@@ -2000,10 +2005,6 @@ forgeSign.scale.set(0, 0, 0);
 forgeSign.visible = false;
 allFacilitySigns.push(forgeSign);
 
-/* --------------------------------------------------------------------------
-   FACILITY CLEAR SIGNAGE & INTERACTIVE 3D STATIONS (全設施清晰立牌與實體工作台)
-   -------------------------------------------------------------------------- */
-const allFacilitySigns = [];
 function createFacilityBillboard({ title, sub, icon = '📍', color = '#ffd166', pos, yOffset = 3.2, width = 4.2, height = 1.45, isBeacon = false }) {
   const canvas = document.createElement('canvas');
   canvas.width = 512;
