@@ -147,6 +147,160 @@
     box-shadow: 0 4px 12px rgba(0,0,0,0.3);
   }
 
+    /* Player HP Bar HUD (Numeric & Animated) */
+  .hp-pill {
+    background: rgba(13, 27, 42, 0.92);
+    border: 2px solid #ef476f;
+    border-radius: 28px;
+    padding: 6px 14px 6px 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.4), 0 0 12px rgba(239, 71, 111, 0.35);
+  }
+  .hp-icon {
+    font-size: 18px;
+    animation: heartBeat 2s infinite ease-in-out;
+  }
+  @keyframes heartBeat {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.15); }
+  }
+  .hp-bar-container {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 110px;
+  }
+  .hp-bar-track {
+    width: 100%;
+    height: 9px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 5px;
+    overflow: hidden;
+    position: relative;
+    border: 1px solid rgba(0,0,0,0.3);
+  }
+  .hp-bar-fill {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, #06d6a0, #2ec4b6);
+    border-radius: 5px;
+    transition: width 0.2s ease, background 0.3s ease;
+  }
+  .hp-text {
+    font-size: 12px;
+    font-weight: 800;
+    color: #ffd166;
+    letter-spacing: 0.5px;
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+  }
+
+  /* Target Monster HP HUD */
+  #target-hp-hud {
+    position: absolute;
+    top: 68px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: min(90%, 360px);
+    background: rgba(15, 23, 42, 0.94);
+    border: 2px solid #f77f00;
+    border-radius: 12px;
+    padding: 6px 12px;
+    z-index: 11;
+    pointer-events: none;
+    box-shadow: 0 0 20px rgba(247, 127, 0, 0.45);
+    display: none;
+    transition: opacity 0.2s ease;
+  }
+  #target-hp-hud.active {
+    display: block;
+    animation: fadeInDown 0.3s ease-out;
+  }
+  .target-hp-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: #ffd166;
+    font-size: 12px;
+    font-weight: 800;
+    margin-bottom: 4px;
+    letter-spacing: 0.5px;
+  }
+  .target-hp-bar-bg {
+    width: 100%;
+    height: 10px;
+    background: #2b1103;
+    border-radius: 5px;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.2);
+  }
+  .target-hp-bar-fill {
+    height: 100%;
+    width: 100%;
+    background: linear-gradient(90deg, #e63946, #f77f00);
+    border-radius: 5px;
+    transition: width 0.15s ease-out;
+  }
+
+  /* Manual Action Attack Button */
+  #attack-btn {
+    position: absolute;
+    bottom: 96px;
+    right: 20px;
+    width: 76px;
+    height: 76px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #e63946, #9b0022);
+    border: 3px solid #ffccd5;
+    color: #ffffff;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.5), 0 0 20px rgba(230, 57, 70, 0.65);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 16;
+    pointer-events: auto;
+    user-select: none;
+    -webkit-user-select: none;
+    transition: transform 0.1s, box-shadow 0.15s;
+    touch-action: manipulation;
+  }
+  #attack-btn:active, #attack-btn.pressed {
+    transform: scale(0.88);
+    box-shadow: 0 2px 10px rgba(0,0,0,0.5), 0 0 28px rgba(255, 77, 109, 0.95);
+    background: radial-gradient(circle at 35% 35%, #ff4d6d, #c9184a);
+  }
+  .attack-btn-icon {
+    font-size: 26px;
+    line-height: 1;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));
+  }
+  .attack-btn-label {
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: 0.5px;
+    color: #fff;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.6);
+  }
+  .attack-btn-key {
+    font-size: 9px;
+    font-weight: 800;
+    color: #ffccd5;
+    opacity: 0.85;
+    margin-top: -1px;
+  }
+  .attack-cd-overlay {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.5);
+    opacity: 0;
+    pointer-events: none;
+  }
+
   /* Boss Health Bar HUD (Top Center) */
   #boss-hud {
     position: absolute;
@@ -199,38 +353,80 @@
     box-shadow: 0 0 10px #ff0055;
   }
 
-  /* Dynamic Quest Banner */
+  /* Dynamic Quest Banner & Beacon Highlighting */
   #quest-bar {
     position: absolute;
     top: 68px;
     left: 16px;
-    background: rgba(13, 27, 42, 0.85);
-    backdrop-filter: blur(6px);
-    border: 1px solid rgba(72, 202, 228, 0.4);
-    border-radius: 12px;
-    padding: 7px 14px;
+    background: rgba(13, 27, 42, 0.92);
+    backdrop-filter: blur(8px);
+    border: 2px solid rgba(72, 202, 228, 0.6);
+    border-radius: 14px;
+    padding: 8px 14px;
     color: #e0f2fe;
     font-size: 13px;
     font-weight: 600;
     z-index: 9;
     pointer-events: none;
-    max-width: min(85vw, 420px);
-    line-height: 1.4;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.3);
-    transition: top 0.3s ease;
+    max-width: min(88vw, 460px);
+    line-height: 1.45;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.4), 0 0 16px rgba(72, 202, 228, 0.25);
+    transition: top 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, transform 0.25s ease;
+  }
+  #quest-bar.quest-ping {
+    border-color: #ffd166;
+    box-shadow: 0 0 28px rgba(255, 209, 102, 0.9);
+    transform: scale(1.03);
   }
   body.boss-active #quest-bar {
     top: 135px;
   }
+  .quest-top-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 4px;
+  }
   .quest-tag {
-    background: #0077b6;
+    background: linear-gradient(135deg, #0077b6, #0096c7);
     color: #fff;
-    padding: 2px 6px;
-    border-radius: 6px;
+    padding: 2px 8px;
+    border-radius: 8px;
     font-size: 11px;
     font-weight: 800;
-    margin-right: 6px;
-    display: inline-block;
+    letter-spacing: 0.5px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .quest-distance-badge {
+    background: rgba(255, 209, 102, 0.2);
+    border: 1px solid #ffd166;
+    color: #ffd166;
+    padding: 2px 7px;
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: 800;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-variant-numeric: tabular-nums;
+  }
+  .quest-timer-badge {
+    font-size: 10px;
+    color: #90e0ef;
+    font-weight: 700;
+  }
+  .quest-title-text {
+    font-weight: 800;
+    color: #ffffff;
+    font-size: 13px;
+    margin-bottom: 2px;
+  }
+  .quest-sub-text {
+    font-size: 12px;
+    color: #bde0fe;
   }
 
   /* Weapon Hotbar (Bottom Center) */
@@ -307,7 +503,7 @@
   /* Camera Zoom Controls (Moved higher to avoid overlapping weapon hotbar!) */
   #zoom-controls {
     position: absolute;
-    bottom: 96px;
+    bottom: 186px;
     right: 18px;
     display: flex;
     flex-direction: column;
@@ -710,6 +906,15 @@
       <span class="bag-icon">🎒</span>
       <span id="backpack-display">0 / 12</span>
     </div>
+    <div class="hp-pill" id="player-hp-pill" title="角色生命值 (受到傷害可回基地溫泉急速復原)">
+      <span class="hp-icon">❤️</span>
+      <div class="hp-bar-container">
+        <div class="hp-bar-track">
+          <div class="hp-bar-fill" id="player-hp-fill"></div>
+        </div>
+        <span class="hp-text" id="player-hp-text">100 / 100</span>
+      </div>
+    </div>
   </div>
 
   <div class="top-right-group">
@@ -723,10 +928,26 @@
   </div>
 </div>
 
-<!-- Dynamic Quest Banner -->
+<!-- Dynamic Quest Banner & 10s Beacon Navigation -->
 <div id="quest-bar">
-  <span class="quest-tag">目標引導</span>
-  <span id="quest-text">步驟 1：拾取西側「凍魚」並放入切割機，開啟自動化生存產線！</span>
+  <div class="quest-top-row">
+    <span class="quest-tag" id="quest-tag">🎯 主線任務 [1/14]</span>
+    <span class="quest-distance-badge" id="quest-distance-badge">📍 距目標：0m</span>
+    <span class="quest-timer-badge" id="quest-timer-badge">⏱️ 導引波 10s</span>
+  </div>
+  <div class="quest-title-text" id="quest-title">步驟 1：開啟切片生存產線</div>
+  <div class="quest-sub-text" id="quest-text">拾取西側「生魚」並放入切割機，開啟自動化生存產線！</div>
+</div>
+
+<!-- Current Target Monster HP HUD -->
+<div id="target-hp-hud">
+  <div class="target-hp-header">
+    <span id="target-name">⚔️ 交戰目標：極地野獸</span>
+    <span id="target-hp-text">100 / 100</span>
+  </div>
+  <div class="target-hp-bar-bg">
+    <div class="target-hp-bar-fill" id="target-hp-fill"></div>
+  </div>
 </div>
 
 <!-- Boss HUD -->
@@ -784,6 +1005,14 @@
   <button class="zoom-btn" id="btn-zoom-in" title="放大視野">+</button>
   <button class="zoom-btn" id="btn-zoom-out" title="縮小視野">−</button>
 </div>
+
+<!-- Manual Attack Action Button (Mobile & Desktop) -->
+<button id="attack-btn" title="手動武器攻擊 (按空白鍵 SPACE 或 J)">
+  <div class="attack-cd-overlay" id="attack-cd-overlay"></div>
+  <span class="attack-btn-icon" id="attack-btn-icon">⚔️</span>
+  <span class="attack-btn-label">攻擊</span>
+  <span class="attack-btn-key">SPACE</span>
+</button>
 
 <!-- Instructions Toast -->
 <div id="touch-hint">👆 滑動螢幕 / WASD 移動 ｜ 金色箭頭導引下個解鎖目標</div>
@@ -929,6 +1158,39 @@ class SoundManager {
     gain.connect(this.ctx.destination);
     osc.start(t);
     osc.stop(t + 0.18);
+  }
+  playBeaconPing() {
+    if (this.muted) return;
+    this.init();
+    const t = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(880, t);
+    osc.frequency.setValueAtTime(1174.66, t + 0.08);
+    osc.frequency.setValueAtTime(1567.98, t + 0.16);
+    gain.gain.setValueAtTime(0.14, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.55);
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    osc.start(t);
+    osc.stop(t + 0.55);
+  }
+  playSwing() {
+    if (this.muted) return;
+    this.init();
+    const t = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(260, t);
+    osc.frequency.exponentialRampToValueAtTime(70, t + 0.14);
+    gain.gain.setValueAtTime(0.15, t);
+    gain.gain.linearRampToValueAtTime(0.001, t + 0.14);
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    osc.start(t);
+    osc.stop(t + 0.14);
   }
   playHit() {
     if (this.muted) return;
@@ -1150,42 +1412,170 @@ function addMoney(amt) {
   moneyPill.classList.add('bounce');
 }
 
+/* ==========================================================================
+   ENHANCED STRUCTURED QUEST SYSTEM & 10-SECOND BEACON NAVIGATION
+   ========================================================================== */
+const QUEST_STEPS = [
+  { id: 'conveyor1', title: '步驟 1：開啟切片自動化產線', desc: '拾取西側凍魚投入切割機，賺取 $100 踩踏解鎖［1號輸送帶］！', pos: new THREE.Vector3(-6, 0, -2.5), name: '1號輸送帶' },
+  { id: 'conveyor2', title: '步驟 2：輸送帶直通販售台', desc: '賺取 $150 踩踏解鎖［2號輸送帶］，實現切片魚肉全自動送到櫃台！', pos: new THREE.Vector3(1.5, 0, -1.8), name: '2號輸送帶' },
+  { id: 'counter2', title: '步驟 3：解鎖高級熟肉收購台', desc: '賺取 $250 踩踏解鎖［2號高級發放台］，準備向市民販售獵物高級肉！', pos: new THREE.Vector3(1.5, 0, 3.5), name: '2號高級發放台' },
+  { id: 'zone1', title: '步驟 4：拓荒第 1 環區針葉林', desc: '前往西北方向踩踏付費解鎖［第 1 環區：冰封針葉林］（$1,000）！', pos: new THREE.Vector3(-18, 0, -18), name: '針葉林區域' },
+  { id: 'blacksmith', title: '步驟 5：針葉林建造鐵匠鋪', desc: '針葉林：踩踏建造［鐵匠鋪］（$500）取得【伐木重斧】，擊殺極地狂狼！', pos: new THREE.Vector3(-36, 0, -36), name: '鐵匠鋪' },
+  { id: 'zone2', title: '步驟 6：拓荒第 2 環區凜風峽谷', desc: '前往東北方向踩踏付費解鎖［第 2 環區：凜風峽谷］（$2,500）！', pos: new THREE.Vector3(18, 0, -18), name: '凜風峽谷區域' },
+  { id: 'archeryRange', title: '步驟 7：峽谷建造箭術靶場', desc: '峽谷：踩踏建造［箭術靶場］（$1,200）取得【連發獵弓】，遠距狙殺巨鷹猛獁！', pos: new THREE.Vector3(36, 0, -36), name: '箭術靶場' },
+  { id: 'zone3', title: '步驟 8：拓荒第 3 環區硫磺溫泉', desc: '前往東南方向踩踏付費解鎖［第 3 環區：地熱硫磺溫泉］（$6,000）！', pos: new THREE.Vector3(18, 0, 18), name: '硫磺溫泉區域' },
+  { id: 'gunsmith', title: '步驟 9：溫泉建造軍火工坊', desc: '溫泉：踩踏建造［軍火工坊］（$3,000）取得【雙管獵槍】，轟碎高甲熔岩蟹！', pos: new THREE.Vector3(36, 0, 36), name: '軍火工坊' },
+  { id: 'zone4', title: '步驟 10：拓荒第 4 環區冰川遺跡', desc: '前往西南方向踩踏付費解鎖［第 4 環區：遠古冰川遺跡］（$15,000）！', pos: new THREE.Vector3(-18, 0, 18), name: '冰川遺跡區域' },
+  { id: 'energyLab', title: '步驟 11：遺跡建造能源實驗室', desc: '遺跡：踩踏建造［能源實驗室］（$8,000）取得【寒冰雷射砲】，瓦解冰霜魔像！', pos: new THREE.Vector3(-36, 0, 36), name: '能源實驗室' },
+  { id: 'zone5', title: '步驟 12：解鎖外環深淵王座', desc: '終極挑戰：踩踏外環解鎖［第 5 環區：深淵王座］（$40,000）！', pos: new THREE.Vector3(0, 0, -42), name: '深淵王座區域' },
+  { id: 'mythicAltar', title: '步驟 13：建造神話祭壇召喚鎚', desc: '深淵：踩踏建造［神話祭壇］（$25,000）召喚【雷神戰鎚】，迎戰巨龍 BOSS！', pos: new THREE.Vector3(0, 0, -62), name: '神話祭壇' },
+  { id: 'dragonBoss', title: '【終極決戰】討伐深淵冰霜巨龍', desc: '投入能源電池召喚巨龍討伐，狂暴連鎖閃電與重砲全場轟殺！', pos: new THREE.Vector3(0, 0, -85), name: '深淵冰霜巨龍' }
+];
+
+let questBeaconTimer = 0.0;
+let currentActiveQuest = QUEST_STEPS[0];
+
+function getActiveQuestStep() {
+  if (!GAME_STATE.unlocked.conveyor1) return { step: QUEST_STEPS[0], idx: 0 };
+  if (!GAME_STATE.unlocked.conveyor2) return { step: QUEST_STEPS[1], idx: 1 };
+  if (!GAME_STATE.unlocked.counter2) return { step: QUEST_STEPS[2], idx: 2 };
+  if (!GAME_STATE.unlockedZones.zone1) return { step: QUEST_STEPS[3], idx: 3 };
+  if (!GAME_STATE.unlocked.blacksmith) return { step: QUEST_STEPS[4], idx: 4 };
+  if (!GAME_STATE.unlockedZones.zone2) return { step: QUEST_STEPS[5], idx: 5 };
+  if (!GAME_STATE.unlocked.archeryRange) return { step: QUEST_STEPS[6], idx: 6 };
+  if (!GAME_STATE.unlockedZones.zone3) return { step: QUEST_STEPS[7], idx: 7 };
+  if (!GAME_STATE.unlocked.gunsmith) return { step: QUEST_STEPS[8], idx: 8 };
+  if (!GAME_STATE.unlockedZones.zone4) return { step: QUEST_STEPS[9], idx: 9 };
+  if (!GAME_STATE.unlocked.energyLab) return { step: QUEST_STEPS[10], idx: 10 };
+  if (!GAME_STATE.unlockedZones.zone5) return { step: QUEST_STEPS[11], idx: 11 };
+  if (!GAME_STATE.unlocked.mythicAltar) return { step: QUEST_STEPS[12], idx: 12 };
+  return { step: QUEST_STEPS[13], idx: 13 };
+}
+
+function triggerQuestBeacon(targetPos, targetName) {
+  if (!targetPos) return;
+
+  // 1. Crystal notification ping sound
+  if (audio && audio.playBeaconPing) audio.playBeaconPing();
+
+  // 2. High-contrast Quest Banner shimmer
+  const qBar = document.getElementById('quest-bar');
+  if (qBar) {
+    qBar.classList.remove('quest-ping');
+    void qBar.offsetWidth;
+    qBar.classList.add('quest-ping');
+    setTimeout(() => qBar.classList.remove('quest-ping'), 1400);
+  }
+
+  // 3. 3D Golden Sky-Beam Pillar
+  const beaconGeo = new THREE.CylinderGeometry(0.8, 0.8, 36, 16);
+  const beaconMat = new THREE.MeshBasicMaterial({
+    color: 0xffd166,
+    transparent: true,
+    opacity: 0.85,
+    side: THREE.DoubleSide
+  });
+  const beaconMesh = new THREE.Mesh(beaconGeo, beaconMat);
+  beaconMesh.position.set(targetPos.x, 18, targetPos.z);
+  scene.add(beaconMesh);
+
+  // 4. Expanding Shockwave Ring on Ground
+  const ringGeo = new THREE.RingGeometry(0.6, 1.4, 24);
+  const ringMat = new THREE.MeshBasicMaterial({ color: 0xffd166, side: THREE.DoubleSide, transparent: true, opacity: 0.95 });
+  const ringMesh = new THREE.Mesh(ringGeo, ringMat);
+  ringMesh.rotation.x = -Math.PI / 2;
+  ringMesh.position.set(targetPos.x, 0.18, targetPos.z);
+  scene.add(ringMesh);
+
+  // 5. Floating 3D Target Marker Badge
+  const signMesh = createFacilityBillboard({
+    title: `🎯 目標：${targetName}`,
+    sub: `【每 10 秒導引波發射中・朝此方向前進】`,
+    icon: '🎯',
+    color: '#ffd166',
+    pos: targetPos,
+    yOffset: 4.8,
+    width: 4.5,
+    height: 1.5
+  });
+
+  // Animated expansion & gradual fade out
+  let elapsed = 0;
+  const interval = setInterval(() => {
+    elapsed += 0.05;
+    const progress = elapsed / 3.2;
+    if (progress >= 1.0) {
+      clearInterval(interval);
+      scene.remove(beaconMesh);
+      scene.remove(ringMesh);
+      scene.remove(signMesh);
+      const sIdx = allFacilitySigns.indexOf(signMesh);
+      if (sIdx !== -1) allFacilitySigns.splice(sIdx, 1);
+    } else {
+      beaconMat.opacity = 0.85 * (1 - progress);
+      ringMat.opacity = 0.95 * (1 - progress);
+      const s = 1.0 + progress * 7.0;
+      ringMesh.scale.set(s, s, 1);
+    }
+  }, 50);
+
+  // On-screen floating notice
+  if (player && player.group) {
+    const dist = Math.round(player.group.position.distanceTo(targetPos));
+    spawnFloatingText(player.group.position, `🎯 10秒目標導引：【${targetName}】(距 ${dist}m)`, 'thunder');
+  }
+}
+
 function updateHUD() {
   moneyDisplay.textContent = GAME_STATE.money.toLocaleString();
   backpackDisplay.textContent = `${GAME_STATE.backpack.length} / ${GAME_STATE.maxBackpack}`;
   updateQuestGuidance();
   updateWeaponHotbarUI();
+  if (player && player.updateHpDisplay) player.updateHpDisplay();
 }
 
 function updateQuestGuidance() {
-  if (!GAME_STATE.unlocked.conveyor1) {
-    questText.textContent = "步驟 1：拾取西側凍魚並放入切割機，解鎖［1號輸送帶］（$100）！";
-  } else if (!GAME_STATE.unlocked.conveyor2) {
-    questText.textContent = "步驟 2：解鎖［2號輸送帶］（$150），實現魚肉自動送到販售櫃台！";
-  } else if (!GAME_STATE.unlocked.counter2) {
-    questText.textContent = "步驟 3：解鎖［2號高級發放台］（$250），準備向市民販售獵物高級肉！";
-  } else if (!GAME_STATE.unlockedZones.zone1) {
-    questText.textContent = "步驟 4：前往西北方踩踏解鎖［第 1 環區：冰封針葉林］（$1,000）！";
-  } else if (!GAME_STATE.unlocked.blacksmith) {
-    questText.textContent = "針葉林：建造［鐵匠鋪］（$500）取得【伐木重斧】，擊殺極地狂狼！";
-  } else if (!GAME_STATE.unlockedZones.zone2) {
-    questText.textContent = "步驟 5：前往東北方踩踏解鎖［第 2 環區：凜風峽谷］（$2,500）！";
-  } else if (!GAME_STATE.unlocked.archeryRange) {
-    questText.textContent = "峽谷：建造［箭術靶場］（$1,200）取得【連發獵弓】，遠距狙殺巨鷹與猛獁象！";
-  } else if (!GAME_STATE.unlockedZones.zone3) {
-    questText.textContent = "步驟 6：前往東南方踩踏解鎖［第 3 環區：地熱硫磺溫泉］（$6,000）！";
-  } else if (!GAME_STATE.unlocked.gunsmith) {
-    questText.textContent = "溫泉：建造［軍火工坊］（$3,000）取得【雙管獵槍】，轟碎高甲熔岩蟹做火鍋！";
-  } else if (!GAME_STATE.unlockedZones.zone4) {
-    questText.textContent = "步驟 7：前往西南方踩踏解鎖［第 4 環區：遠古冰川遺跡］（$15,000）！";
-  } else if (!GAME_STATE.unlocked.energyLab) {
-    questText.textContent = "遺跡：建造［能源實驗室］（$8,000）取得【寒冰雷射砲】，瓦解古代冰霜魔像！";
-  } else if (!GAME_STATE.unlockedZones.zone5) {
-    questText.textContent = "終極挑戰：踩踏外環解鎖［第 5 環區：深淵王座］（$40,000）！";
-  } else if (!GAME_STATE.unlocked.mythicAltar) {
-    questText.textContent = "深淵：建造［神話祭壇］（$25,000）召喚【雷神戰鎚】，迎戰深淵巨龍 BOSS！";
-  } else {
-    questText.textContent = "極地帝國巔峰：投入能源電池召喚巨龍討伐，狂暴連鎖閃電與電磁砲席捲全場！";
+  const { step, idx } = getActiveQuestStep();
+  currentActiveQuest = step;
+
+  const questTagEl = document.getElementById('quest-tag');
+  const questTitleEl = document.getElementById('quest-title');
+  const questTextEl = document.getElementById('quest-text');
+  const questDistEl = document.getElementById('quest-distance-badge');
+  const questTimerEl = document.getElementById('quest-timer-badge');
+
+  if (questTagEl) questTagEl.textContent = `🎯 主線任務 [${idx + 1}/14]`;
+  if (questTitleEl) questTitleEl.textContent = step.title;
+  if (questTextEl) questTextEl.textContent = step.desc;
+
+  if (player && player.group && step.pos) {
+    const dist = Math.round(player.group.position.distanceTo(step.pos));
+    if (questDistEl) questDistEl.textContent = `📍 距目標：${dist}m`;
+  }
+  if (questTimerEl) {
+    const rem = Math.max(1, Math.ceil(10 - questBeaconTimer));
+    questTimerEl.textContent = `⏱️ 導引波 ${rem}s`;
+  }
+}
+
+function updateQuestBeaconLoop(dt) {
+  questBeaconTimer += dt;
+  if (questBeaconTimer >= 10.0) {
+    questBeaconTimer = 0.0;
+    const { step } = getActiveQuestStep();
+    triggerQuestBeacon(step.pos, step.name);
+  }
+  // Real-time distance update in quest bar
+  const { step } = getActiveQuestStep();
+  if (player && player.group && step.pos) {
+    const dist = Math.round(player.group.position.distanceTo(step.pos));
+    const questDistEl = document.getElementById('quest-distance-badge');
+    const questTimerEl = document.getElementById('quest-timer-badge');
+    if (questDistEl) questDistEl.textContent = `📍 距目標：${dist}m`;
+    if (questTimerEl) {
+      const rem = Math.max(1, Math.ceil(10 - questBeaconTimer));
+      questTimerEl.textContent = `⏱️ 導引波 ${rem}s`;
+    }
   }
 }
 
@@ -1536,6 +1926,302 @@ const forgeSign = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 1.2), new THREE.Me
 forgeSign.position.set(0, 2.3, 0);
 weaponForgeGroup.add(forgeSign);
 scene.add(weaponForgeGroup);
+
+/* --------------------------------------------------------------------------
+   FACILITY CLEAR SIGNAGE & INTERACTIVE 3D STATIONS (全設施清晰立牌與實體工作台)
+   -------------------------------------------------------------------------- */
+const allFacilitySigns = [];
+function createFacilityBillboard({ title, sub, icon = '📍', color = '#ffd166', pos, yOffset = 3.2, width = 4.2, height = 1.45 }) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 512;
+  canvas.height = 192;
+  const ctx = canvas.getContext('2d');
+
+  // Dark high-contrast background
+  ctx.fillStyle = 'rgba(10, 20, 38, 0.94)';
+  if (ctx.roundRect) {
+    ctx.roundRect(8, 8, 496, 176, 24);
+  } else {
+    ctx.rect(8, 8, 496, 176);
+  }
+  ctx.fill();
+
+  // Glowing neon border
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 8;
+  ctx.stroke();
+
+  // Title with Icon
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 36px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(`${icon} ${title}`, 256, 62);
+
+  // Subtitle / Operation Guide
+  ctx.fillStyle = color;
+  ctx.font = 'bold 24px sans-serif';
+  ctx.fillText(sub, 256, 126);
+
+  const tex = new THREE.CanvasTexture(canvas);
+  const mat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, side: THREE.DoubleSide });
+  const mesh = new THREE.Mesh(new THREE.PlaneGeometry(width, height), mat);
+  mesh.position.set(pos.x, pos.y + yOffset, pos.z);
+  scene.add(mesh);
+  allFacilitySigns.push(mesh);
+  return mesh;
+}
+
+// 1. Hub: 生魚冰窟 (Raw Fish Source Hole) at (-10, 0, 0)
+const fishHoleGroup = new THREE.Group();
+fishHoleGroup.position.set(-10, 0, 0);
+const fhDeck = new THREE.Mesh(new THREE.BoxGeometry(4.2, 0.22, 4.2), materials.woodPlank);
+fhDeck.position.y = 0.1;
+fishHoleGroup.add(fhDeck);
+const fhIceWater = new THREE.Mesh(new THREE.CylinderGeometry(1.3, 1.3, 0.25, 24), new THREE.MeshBasicMaterial({ color: 0x00b4d8 }));
+fhIceWater.position.y = 0.12;
+fishHoleGroup.add(fhIceWater);
+const fhRing = new THREE.Mesh(new THREE.TorusGeometry(1.35, 0.14, 8, 24), new THREE.MeshStandardMaterial({ color: 0xcaf0f8, roughness: 0.2 }));
+fhRing.rotation.x = Math.PI / 2;
+fhRing.position.y = 0.22;
+fishHoleGroup.add(fhRing);
+const fhBucket = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.3, 0.6, 8), materials.woodFence);
+fhBucket.position.set(1.4, 0.4, 1.2);
+fishHoleGroup.add(fhBucket);
+scene.add(fishHoleGroup);
+createFacilityBillboard({
+  title: '凍魚冰窟',
+  sub: '【資源源頭】自動產出新鮮生魚・靠近自動拾取',
+  icon: '🐟',
+  color: '#48cae4',
+  pos: new THREE.Vector3(-10, 0, 0),
+  yOffset: 3.2
+});
+
+// 2. Hub: 魚肉切割機 (Fish Processing Workbench) at (-2.75, 0, -3.0)
+const fishCutterGroup = new THREE.Group();
+fishCutterGroup.position.set(-2.75, 0, -3.0);
+// Wooden table
+const fcTable = new THREE.Mesh(new THREE.BoxGeometry(3.6, 0.7, 1.8), materials.woodPlank);
+fcTable.position.y = 0.35;
+fishCutterGroup.add(fcTable);
+// Stainless top
+const fcTop = new THREE.Mesh(new THREE.BoxGeometry(3.7, 0.08, 1.9), materials.metalBlade);
+fcTop.position.y = 0.74;
+fishCutterGroup.add(fcTop);
+// Rotating circular saw blade
+const sawBladeMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.55, 0.06, 16), new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: 0.9, roughness: 0.1 }));
+sawBladeMesh.position.set(0, 1.0, 0);
+sawBladeMesh.rotation.z = Math.PI / 2;
+fishCutterGroup.add(sawBladeMesh);
+// Ground Guide Pads: IN (投入口) & OUT (出料口)
+const padIn = new THREE.Mesh(new THREE.CylinderGeometry(0.95, 0.95, 0.04, 24), new THREE.MeshBasicMaterial({ color: 0x0077b6 }));
+padIn.position.set(-3.5, 0.05, -3.0);
+scene.add(padIn);
+const padInRing = new THREE.Mesh(new THREE.TorusGeometry(0.96, 0.06, 6, 24), new THREE.MeshBasicMaterial({ color: 0x48cae4 }));
+padInRing.rotation.x = Math.PI / 2;
+padInRing.position.set(-3.5, 0.08, -3.0);
+scene.add(padInRing);
+
+const padOut = new THREE.Mesh(new THREE.CylinderGeometry(0.95, 0.95, 0.04, 24), new THREE.MeshBasicMaterial({ color: 0xd97706 }));
+padOut.position.set(-2.0, 0.05, -3.0);
+scene.add(padOut);
+const padOutRing = new THREE.Mesh(new THREE.TorusGeometry(0.96, 0.06, 6, 24), new THREE.MeshBasicMaterial({ color: 0xfbbf24 }));
+padOutRing.rotation.x = Math.PI / 2;
+padOutRing.position.set(-2.0, 0.08, -3.0);
+scene.add(padOutRing);
+
+scene.add(fishCutterGroup);
+createFacilityBillboard({
+  title: '魚肉切割機',
+  sub: '⬅ 藍區投入生魚 ➔ 橘區產出切片魚 ➡',
+  icon: '⚙️',
+  color: '#ffd166',
+  pos: new THREE.Vector3(-2.75, 0, -3.0),
+  yOffset: 3.2
+});
+
+// 3. Hub: 1號魚肉販售台 (Counter 1 Stall) at (4, 0, -4)
+const counter1Group = new THREE.Group();
+counter1Group.position.set(4, 0, -4);
+const c1Desk = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.9, 1.6), materials.woodPlank);
+c1Desk.position.y = 0.45;
+counter1Group.add(c1Desk);
+// Awning canopy
+const c1Roof = new THREE.Mesh(new THREE.BoxGeometry(3.4, 0.12, 1.8), new THREE.MeshLambertMaterial({ color: 0x2a9d8f }));
+c1Roof.position.set(0, 2.1, 0);
+c1Roof.rotation.x = 0.2;
+counter1Group.add(c1Roof);
+for (let px of [-1.4, 1.4]) {
+  const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 1.4), materials.woodFence);
+  pole.position.set(px, 1.4, 0);
+  counter1Group.add(pole);
+}
+// Glowing ground sales pad
+const padCounter1 = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 1.2, 0.04, 24), new THREE.MeshBasicMaterial({ color: 0x06d6a0 }));
+padCounter1.position.set(4, 0.05, -4);
+scene.add(padCounter1);
+scene.add(counter1Group);
+createFacilityBillboard({
+  title: '1號魚肉販售台',
+  sub: '放入切片魚 ➔ 換取金幣 (+$20/份)',
+  icon: '💰',
+  color: '#06d6a0',
+  pos: new THREE.Vector3(4, 0, -4),
+  yOffset: 3.4
+});
+
+// 4. Hub: 2號熟食收購台 (Counter 2 Stall) at (4, 0, 4)
+const counter2Group = new THREE.Group();
+counter2Group.position.set(4, 0, 4);
+const c2Desk = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.9, 1.6), materials.woodPlank);
+c2Desk.position.y = 0.45;
+counter2Group.add(c2Desk);
+const c2Roof = new THREE.Mesh(new THREE.BoxGeometry(3.4, 0.12, 1.8), new THREE.MeshLambertMaterial({ color: 0xe76f51 }));
+c2Roof.position.set(0, 2.1, 0);
+c2Roof.rotation.x = -0.2;
+counter2Group.add(c2Roof);
+for (let px of [-1.4, 1.4]) {
+  const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 1.4), materials.woodFence);
+  pole.position.set(px, 1.4, 0);
+  counter2Group.add(pole);
+}
+const padCounter2 = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 1.2, 0.04, 24), new THREE.MeshBasicMaterial({ color: 0xe76f51 }));
+padCounter2.position.set(4, 0.05, 4);
+scene.add(padCounter2);
+scene.add(counter2Group);
+createFacilityBillboard({
+  title: '2號熟食收購台',
+  sub: '收購雪熊肉($60) / 巨鯊肉($150)',
+  icon: '🍖',
+  color: '#e76f51',
+  pos: new THREE.Vector3(4, 0, 4),
+  yOffset: 3.4
+});
+
+// 5. Hub: 溫泉避難所看板 (Sanctuary Hot Spring Sign)
+createFacilityBillboard({
+  title: '基地溫泉避難所',
+  sub: '【庇護聖域】急速回復生命・怪物強迫脫離戰鬥',
+  icon: '♨️',
+  color: '#48cae4',
+  pos: new THREE.Vector3(0, 0, 2.5),
+  yOffset: 3.4
+});
+
+// Zone 1 Signboards
+createFacilityBillboard({
+  title: '針葉林鐵匠鋪',
+  sub: '解鎖武器：伐木重斧 (AOE大範圍旋風斬)',
+  icon: '🪓',
+  color: '#9d0208',
+  pos: new THREE.Vector3(-36, 0, -36),
+  yOffset: 4.8
+});
+createFacilityBillboard({
+  title: '皮革鞣製機',
+  sub: '投入狼皮 ➔ 自動精製【禦寒皮衣】',
+  icon: '🧵',
+  color: '#48cae4',
+  pos: new THREE.Vector3(-34, 0, -48),
+  yOffset: 3.2
+});
+createFacilityBillboard({
+  title: '皮衣專賣台',
+  sub: '收購禦寒皮衣 ➔ 獲得金幣 (+$200/件)',
+  icon: '🧥',
+  color: '#06d6a0',
+  pos: new THREE.Vector3(-24, 0, -38),
+  yOffset: 3.2
+});
+
+// Zone 2 Signboards
+createFacilityBillboard({
+  title: '峽谷箭術靶場',
+  sub: '解鎖武器：連發獵弓 (高速遠程狙殺)',
+  icon: '🏹',
+  color: '#0077b6',
+  pos: new THREE.Vector3(36, 0, -36),
+  yOffset: 4.6
+});
+createFacilityBillboard({
+  title: '羽毛工藝台',
+  sub: '投入獠牙羽毛 ➔ 精製【高級羽絨大衣】',
+  icon: '🪶',
+  color: '#00f5d4',
+  pos: new THREE.Vector3(34, 0, -48),
+  yOffset: 3.2
+});
+createFacilityBillboard({
+  title: '羽絨大衣專賣台',
+  sub: '收購高級羽絨衣 ➔ 獲得金幣 (+$450/件)',
+  icon: '🥼',
+  color: '#06d6a0',
+  pos: new THREE.Vector3(24, 0, -38),
+  yOffset: 3.2
+});
+
+// Zone 3 Signboards
+createFacilityBillboard({
+  title: '溫泉軍火工坊',
+  sub: '解鎖武器：雙管霰彈獵槍 (近身扇形狂轟)',
+  icon: '💥',
+  color: '#f77f00',
+  pos: new THREE.Vector3(36, 0, 36),
+  yOffset: 4.6
+});
+createFacilityBillboard({
+  title: '地熱蒸氣鍋爐',
+  sub: '投入熔岩蟹殼 ➔ 熬煮【豪華海陸火鍋】',
+  icon: '🍲',
+  color: '#ffb703',
+  pos: new THREE.Vector3(34, 0, 48),
+  yOffset: 3.4
+});
+createFacilityBillboard({
+  title: '極地火鍋專賣台',
+  sub: '收購海陸火鍋 ➔ 獲得金幣 (+$1,000/鍋)',
+  icon: '🥢',
+  color: '#06d6a0',
+  pos: new THREE.Vector3(24, 0, 38),
+  yOffset: 3.2
+});
+
+// Zone 4 Signboards
+createFacilityBillboard({
+  title: '冰川能源實驗室',
+  sub: '解鎖武器：寒冰雷射砲 (持續穿透光束)',
+  icon: '❄️',
+  color: '#00b4d8',
+  pos: new THREE.Vector3(-36, 0, 36),
+  yOffset: 4.6
+});
+createFacilityBillboard({
+  title: '永動精煉儀',
+  sub: '投入冰霜核心 ➔ 精煉【永動發熱電池】',
+  icon: '🔋',
+  color: '#90e0ef',
+  pos: new THREE.Vector3(-34, 0, 48),
+  yOffset: 3.4
+});
+createFacilityBillboard({
+  title: '電池專賣台',
+  sub: '收購永動發熱電池 ➔ 獲得金幣 (+$2,500/顆)',
+  icon: '⚡',
+  color: '#06d6a0',
+  pos: new THREE.Vector3(-24, 0, 38),
+  yOffset: 3.2
+});
+
+// Zone 5 Signboard
+createFacilityBillboard({
+  title: '遠古深淵神話祭壇',
+  sub: '獲得雷神戰鎚・召喚深淵冰霜巨龍利維坦',
+  icon: '👑',
+  color: '#ff0055',
+  pos: new THREE.Vector3(0, 0, -62),
+  yOffset: 4.6
+});
 
 /* --------------------------------------------------------------------------
    5 RED WARNING BARRIER WALLS (未解鎖阻隔紅光警戒柵欄 / 冰牆)
@@ -2900,15 +3586,108 @@ class PlayerCharacter {
     this.group.add(this.weaponGroup);
     this.setWeapon(0);
 
-    // 3D Health Bar
+    // 3D Health Bar & Numeric Canvas Tag
     this.hpBarBg = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 0.18), new THREE.MeshBasicMaterial({ color: 0x111111 }));
     this.hpBarFill = new THREE.Mesh(new THREE.PlaneGeometry(1.56, 0.14), new THREE.MeshBasicMaterial({ color: 0x55ff55 }));
     this.hpBarBg.position.y = 2.4;
     this.hpBarFill.position.set(0, 2.4, 0.01);
     this.group.add(this.hpBarBg); this.group.add(this.hpBarFill);
 
+    // 3D Overhead Health Numeric Display (Canvas Billboard)
+    this.hpCanvas = document.createElement('canvas');
+    this.hpCanvas.width = 256;
+    this.hpCanvas.height = 72;
+    this.hpCtx = this.hpCanvas.getContext('2d');
+    this.hpTex = new THREE.CanvasTexture(this.hpCanvas);
+    this.hpTextMesh = new THREE.Mesh(
+      new THREE.PlaneGeometry(1.6, 0.45),
+      new THREE.MeshBasicMaterial({ map: this.hpTex, transparent: true, side: THREE.DoubleSide })
+    );
+    this.hpTextMesh.position.set(0, 2.76, 0);
+    this.group.add(this.hpTextMesh);
+
     this.group.position.set(0, 0, 0);
     scene.add(this.group);
+    this.updateHpDisplay();
+  }
+
+  updateHpDisplay() {
+    const curHp = Math.max(0, Math.ceil(this.hp));
+    const pct = curHp / this.maxHp;
+    const hpTextEl = document.getElementById('player-hp-text');
+    const hpFillEl = document.getElementById('player-hp-fill');
+    if (hpTextEl) hpTextEl.textContent = `${curHp} / ${this.maxHp}`;
+    if (hpFillEl) {
+      hpFillEl.style.width = `${Math.min(100, Math.max(0, pct * 100))}%`;
+      if (pct > 0.5) {
+        hpFillEl.style.background = 'linear-gradient(90deg, #06d6a0, #2ec4b6)';
+      } else if (pct > 0.25) {
+        hpFillEl.style.background = 'linear-gradient(90deg, #ffd166, #f77f00)';
+      } else {
+        hpFillEl.style.background = 'linear-gradient(90deg, #e63946, #d90429)';
+      }
+    }
+    // Update 3D canvas billboard
+    if (this.hpCtx) {
+      const ctx = this.hpCtx;
+      ctx.clearRect(0, 0, 256, 72);
+      ctx.fillStyle = 'rgba(10, 20, 36, 0.88)';
+      if (ctx.roundRect) ctx.roundRect(4, 4, 248, 64, 16); else ctx.rect(4, 4, 248, 64);
+      ctx.fill();
+      ctx.strokeStyle = pct > 0.5 ? '#06d6a0' : pct > 0.25 ? '#ffd166' : '#ef476f';
+      ctx.lineWidth = 4;
+      ctx.stroke();
+
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 30px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(`❤️ ${curHp} / ${this.maxHp}`, 128, 36);
+      this.hpTex.needsUpdate = true;
+    }
+  }
+
+  manualAttack() {
+    if (this.isDead) return;
+    const curWeapon = WEAPONS[GAME_STATE.currentWeaponId];
+    const spdMultiplier = 1 + (GAME_STATE.weaponUpgrades.spdLv - 1) * 0.2;
+
+    const btn = document.getElementById('attack-btn');
+    if (btn) {
+      btn.classList.add('pressed');
+      setTimeout(() => btn.classList.remove('pressed'), 120);
+    }
+
+    if (this.attackCooldown > 0.05) return;
+
+    // Search for closest hostile within weapon attack radius
+    const target = this.findClosestHostile(curWeapon.range * 1.35);
+    if (target) {
+      // Face the enemy
+      const dir = target.group.position.clone().sub(this.group.position);
+      this.group.rotation.y = Math.atan2(dir.x, dir.z);
+      this.executeWeaponAttack(target, 0.016);
+      spawnFloatingText(this.group.position, `💥 手動連擊！`, 'thunder');
+    } else {
+      // Manual free-swing in current direction
+      this.attackCooldown = Math.max(0.18, (curWeapon.cd || 0.6) / spdMultiplier);
+      audio.playSwing();
+      this.weaponSwingTime += 6;
+      this.weaponGroup.rotation.x = -1.2;
+      setTimeout(() => { if (this.weaponGroup) this.weaponGroup.rotation.set(0, 0, 0); }, 150);
+
+      // Slash visual arc
+      const slash = new THREE.Mesh(
+        new THREE.RingGeometry(0.8, 1.8, 12, 1, 0, Math.PI),
+        new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide, transparent: true, opacity: 0.85 })
+      );
+      slash.position.copy(this.group.position).add(new THREE.Vector3(0, 1.0, 0));
+      slash.rotation.x = Math.PI / 2;
+      slash.rotation.z = this.group.rotation.y;
+      scene.add(slash);
+      setTimeout(() => scene.remove(slash), 140);
+      spawnFloatingText(this.group.position, `⚔️ 揮擊！`, 'info');
+    }
   }
 
   setWeapon(id) {
@@ -2922,6 +3701,7 @@ class PlayerCharacter {
   takeDamage(amt) {
     if (this.isDead || this.isInvulnerable || isInSafeZone(this.group.position)) return;
     this.hp -= amt;
+    this.updateHpDisplay();
     audio.playHit();
     spawnFloatingText(this.group.position, `-${Math.round(amt)} HP!`, "dmg");
     if (this.hp <= 0) this.die();
@@ -2951,6 +3731,7 @@ class PlayerCharacter {
     setTimeout(() => {
       this.group.position.set(0, 0, 0);
       this.hp = this.maxHp;
+      this.updateHpDisplay();
       this.isDead = false;
       this.isInvulnerable = true;
       setTimeout(() => { this.isInvulnerable = false; }, 3000);
@@ -3111,6 +3892,7 @@ class PlayerCharacter {
 
     this.hpBarBg.lookAt(camera.position);
     this.hpBarFill.lookAt(camera.position);
+    if (this.hpTextMesh) this.hpTextMesh.lookAt(camera.position);
     const hpPct = Math.max(0, this.hp / this.maxHp);
     this.hpBarFill.scale.x = hpPct;
     this.hpBarFill.material.color.setHex(hpPct > 0.4 ? 0x55ff55 : 0xff3333);
@@ -3118,6 +3900,7 @@ class PlayerCharacter {
     // Hot spring sanctuary natural regeneration
     if (isInSafeZone(this.group.position) && this.hp < this.maxHp) {
       this.hp = Math.min(this.maxHp, this.hp + 25 * dt);
+      this.updateHpDisplay();
     }
 
     // Movement
@@ -3791,15 +4574,43 @@ function checkInteractions(dt) {
     }
   }
 
-  // Stand near Central Forge (0, 0, -4.5): Proximity Prompt (Never block view or get stuck when passing by!)
-  const distToForge = pPos.distanceTo(new THREE.Vector3(0, 0, -4.5));
-  if (distToForge < 3.2) {
-    showInteractionPrompt("⚒️ 進入武器鍛造台", () => openForgeModal(), 'forge');
-  } else {
+  // Proximity Information Guidance for all Facilities & Stations
+  let inAnyFacility = false;
+  const facilityPrompts = [
+    { pos: rawFishAnchor, dist: 3.2, text: '🐟【凍魚冰窟】資源源頭：靠近自動拾取生魚入背包' },
+    { pos: new THREE.Vector3(-2.75, 0, -3.0), dist: 3.2, text: '⚙️【魚肉切割機】生魚加工：投入生魚 ➔ 加工為切片魚肉' },
+    { pos: new THREE.Vector3(4, 0, -4), dist: 3.2, text: '💰【1號魚肉販售台】自動收購切片魚，每份獲得 $20' },
+    { pos: new THREE.Vector3(4, 0, 4), dist: 3.2, text: '🍖【2號熟食收購台】收購雪熊肉($60)或巨鯊肉($150)' },
+    { pos: new THREE.Vector3(0, 0, 2.5), dist: 3.5, text: '♨️【基地避難溫泉】庇護聖域：急速回復生命值，脫離戰鬥' },
+    { pos: new THREE.Vector3(0, 0, -4.5), dist: 3.5, text: '⚒️【營地武器鍛造工坊】點擊或按 [E] 升級武器傷害力與攻速', isForge: true },
+    { pos: new THREE.Vector3(-34, 0, -48), dist: 3.2, text: '🧵【皮革鞣製機】投入狼皮 ➔ 自動精製【禦寒皮衣】' },
+    { pos: new THREE.Vector3(-24, 0, -38), dist: 3.2, text: '🧥【皮衣專賣台】收購禦寒皮衣，每件獲得 $200' },
+    { pos: new THREE.Vector3(34, 0, -48), dist: 3.2, text: '🪶【羽毛工藝台】投入獠牙羽毛 ➔ 精製【高級羽絨大衣】' },
+    { pos: new THREE.Vector3(24, 0, -38), dist: 3.2, text: '🥼【羽絨大衣專賣台】收購高級羽絨衣，每件獲得 $450' },
+    { pos: new THREE.Vector3(34, 0, 48), dist: 3.2, text: '🍲【地熱蒸氣鍋爐】投入熔岩蟹殼 ➔ 熬煮【豪華海陸火鍋】' },
+    { pos: new THREE.Vector3(24, 0, 38), dist: 3.2, text: '🥢【極地火鍋專賣台】收購海陸火鍋，每鍋獲得 $1,000' },
+    { pos: new THREE.Vector3(-34, 0, 48), dist: 3.2, text: '🔋【永動精煉儀】投入冰霜核心 ➔ 精煉【永動發熱電池】' },
+    { pos: new THREE.Vector3(-24, 0, 38), dist: 3.2, text: '⚡【電池專賣台】收購永動發熱電池，每顆獲得 $2,500' },
+    { pos: new THREE.Vector3(0, 0, -62), dist: 3.5, text: '👑【遠古神話祭壇】解鎖雷神戰鎚，迎戰深淵巨龍利維坦！' }
+  ];
+
+  for (let fp of facilityPrompts) {
+    if (pPos.distanceTo(fp.pos) < fp.dist) {
+      inAnyFacility = true;
+      if (fp.isForge) {
+        showInteractionPrompt(fp.text, () => openForgeModal(), 'forge');
+      } else {
+        showInteractionPrompt(fp.text, null, 'facility');
+      }
+      break;
+    }
+  }
+  if (!inAnyFacility) {
+    const distToForge = pPos.distanceTo(new THREE.Vector3(0, 0, -4.5));
     if (distToForge > 5.5 && isForgeOpen) {
       closeForgeModal();
     }
-    if (currentPromptSource === 'forge') {
+    if (!isForgeOpen) {
       hideInteractionPrompt();
     }
   }
@@ -3876,6 +4687,12 @@ window.addEventListener('keydown', (e) => {
   if (['1','2','3','4','5','6'].includes(e.key)) {
     switchWeapon(parseInt(e.key) - 1);
   }
+  // Attack action via Space / J / Enter
+  if (e.code === 'Space' || e.key === ' ' || e.key.toLowerCase() === 'j') {
+    e.preventDefault();
+    dismissTouchHint();
+    if (player && player.manualAttack) player.manualAttack();
+  }
   // Quick interact / forge toggle
   if (e.key === 'e' || e.key === 'E') {
     if (isForgeOpen) {
@@ -3914,6 +4731,18 @@ document.querySelectorAll('.weapon-slot').forEach(slot => {
     switchWeapon(id);
   });
 });
+
+// Manual Attack Action Button Event Listener (Touch & Click)
+const attackBtn = document.getElementById('attack-btn');
+if (attackBtn) {
+  const onAttackTrigger = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dismissTouchHint();
+    if (player && player.manualAttack) player.manualAttack();
+  };
+  attackBtn.addEventListener('pointerdown', onAttackTrigger);
+}
 
 /* ==========================================================================
    FORGE MODAL & PROXIMITY INTERACTION SYSTEM
@@ -4097,6 +4926,77 @@ document.getElementById('cheat-tp-z4').addEventListener('click', () => { player.
 document.getElementById('cheat-tp-z5').addEventListener('click', () => { player.group.position.set(0, 0, -80); cheatModal.classList.remove('active'); });
 
 /* ==========================================================================
+   TARGET MONSTER NUMERIC HUD & ATTACK BUTTON UI
+   ========================================================================== */
+function updateTargetMonsterHUD() {
+  const targetHud = document.getElementById('target-hp-hud');
+  const targetNameEl = document.getElementById('target-name');
+  const targetHpTextEl = document.getElementById('target-hp-text');
+  const targetHpFillEl = document.getElementById('target-hp-fill');
+  if (!targetHud || !player || !player.group) return;
+
+  let closestMonster = null;
+  let minDist = 14.0;
+  const pPos = player.group.position;
+
+  const candidateList = [
+    { name: '🐻 極地狂暴雪熊', obj: typeof snowBear !== 'undefined' ? snowBear : null },
+    { name: '🦈 寒冰巨鯊', obj: typeof giantShark !== 'undefined' ? giantShark : null },
+    { name: '🦅 霜羽巨鷹', obj: typeof frostEagle !== 'undefined' ? frostEagle : null },
+    { name: '🦣 冰原猛獁象', obj: typeof snowMammoth !== 'undefined' ? snowMammoth : null },
+    { name: '🦀 熔岩巨蟹', obj: typeof magmaCrab !== 'undefined' ? magmaCrab : null },
+    { name: '🗿 遠古冰霜魔像', obj: typeof ancientGolem !== 'undefined' ? ancientGolem : null },
+    { name: '👑 深淵巨龍・利維坦', obj: typeof abyssalDragon !== 'undefined' ? abyssalDragon : null }
+  ];
+  if (typeof wolves !== 'undefined') {
+    wolves.forEach((w, i) => {
+      candidateList.push({ name: `🐺 極地狂狼 #${i + 1}`, obj: w });
+    });
+  }
+
+  candidateList.forEach(c => {
+    if (c.obj && c.obj.hp > 0 && c.obj.group && c.obj.group.visible !== false) {
+      const d = pPos.distanceTo(c.obj.group.position);
+      if (d < minDist) {
+        minDist = d;
+        closestMonster = c;
+      }
+    }
+  });
+
+  if (closestMonster) {
+    const m = closestMonster.obj;
+    const curHp = Math.max(0, Math.ceil(m.hp));
+    const maxHp = m.maxHp || 100;
+    const pct = Math.min(100, Math.max(0, (curHp / maxHp) * 100));
+    targetHud.classList.add('active');
+    if (targetNameEl) targetNameEl.textContent = `⚔️ ${closestMonster.name} (距 ${Math.round(minDist)}m)`;
+    if (targetHpTextEl) targetHpTextEl.textContent = `${curHp} / ${maxHp} (${Math.round(pct)}%)`;
+    if (targetHpFillEl) targetHpFillEl.style.width = `${pct}%`;
+  } else {
+    targetHud.classList.remove('active');
+  }
+}
+
+function updateAttackButtonUI() {
+  const cdOverlay = document.getElementById('attack-cd-overlay');
+  const curWeapon = WEAPONS[GAME_STATE.currentWeaponId];
+  const spdMultiplier = 1 + (GAME_STATE.weaponUpgrades.spdLv - 1) * 0.2;
+  const maxCd = (curWeapon.cd || 0.6) / spdMultiplier;
+  if (cdOverlay) {
+    if (player.attackCooldown > 0) {
+      cdOverlay.style.opacity = '0.55';
+    } else {
+      cdOverlay.style.opacity = '0';
+    }
+  }
+  const btnIcon = document.getElementById('attack-btn-icon');
+  if (btnIcon && curWeapon) {
+    btnIcon.textContent = curWeapon.icon || '⚔️';
+  }
+}
+
+/* ==========================================================================
    MAIN GAME LOOP
    ========================================================================== */
 let lastTime = performance.now();
@@ -4122,9 +5022,20 @@ function gameLoop(now) {
   camera.position.lerp(cameraTargetPos, 0.08);
   camera.lookAt(player.group.position.x, player.group.position.y + 1, player.group.position.z);
 
-  // Update Guide Arrow & 3D Signs
+  // Update Guide Arrow, 10s Quest Beacon & All 3D Facility Signs
   updateGuideArrow();
+  if (typeof updateQuestBeaconLoop === 'function') updateQuestBeaconLoop(dt);
+  if (typeof allFacilitySigns !== 'undefined') {
+    allFacilitySigns.forEach(s => s.lookAt(camera.position));
+  }
+  if (typeof sawBladeMesh !== 'undefined') {
+    sawBladeMesh.rotation.x += dt * 15;
+  }
   if (forgeSign) forgeSign.lookAt(camera.position);
+
+  // Update Dynamic Target Monster Numeric HUD & Attack Button
+  updateTargetMonsterHUD();
+  updateAttackButtonUI();
 
   // Update Tweens
   updateTweens(dt);
