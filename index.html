@@ -217,6 +217,10 @@
     max-width: min(85vw, 420px);
     line-height: 1.4;
     box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+    transition: top 0.3s ease;
+  }
+  body.boss-active #quest-bar {
+    top: 135px;
   }
   .quest-tag {
     background: #0077b6;
@@ -300,10 +304,10 @@
     font-size: 10px;
   }
 
-  /* Camera Zoom Controls (Bottom Right) */
+  /* Camera Zoom Controls (Moved higher to avoid overlapping weapon hotbar!) */
   #zoom-controls {
     position: absolute;
-    bottom: 24px;
+    bottom: 96px;
     right: 18px;
     display: flex;
     flex-direction: column;
@@ -335,7 +339,7 @@
   /* Instructions Toast / Help */
   #touch-hint {
     position: absolute;
-    bottom: 86px;
+    bottom: 96px;
     left: 50%;
     transform: translateX(-50%);
     background: rgba(10, 20, 30, 0.75);
@@ -350,6 +354,44 @@
     pointer-events: none;
     text-align: center;
     animation: pulseHint 2.5s infinite ease-in-out;
+  }
+
+  /* Interactive Proximity Prompt (Weapon Forge & Stations) */
+  .interaction-prompt {
+    position: absolute;
+    bottom: 96px;
+    left: 50%;
+    transform: translateX(-50%) scale(0.95);
+    background: linear-gradient(135deg, rgba(20, 40, 65, 0.95), rgba(10, 20, 35, 0.95));
+    border: 2px solid #ffd166;
+    border-radius: 24px;
+    padding: 8px 18px;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 800;
+    display: none;
+    align-items: center;
+    gap: 8px;
+    z-index: 20;
+    cursor: pointer;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.6), 0 0 15px rgba(255, 209, 102, 0.4);
+    animation: promptPulse 1.8s infinite ease-in-out;
+    pointer-events: auto;
+  }
+  .interaction-prompt.active {
+    display: flex;
+    transform: translateX(-50%) scale(1);
+  }
+  @keyframes promptPulse {
+    0%, 100% { box-shadow: 0 6px 20px rgba(0,0,0,0.6), 0 0 12px rgba(255, 209, 102, 0.3); }
+    50% { box-shadow: 0 6px 25px rgba(0,0,0,0.7), 0 0 22px rgba(255, 209, 102, 0.6); }
+  }
+  .prompt-subtext {
+    font-size: 11px;
+    color: #90e0ef;
+    background: rgba(255,255,255,0.1);
+    padding: 2px 6px;
+    border-radius: 6px;
   }
   @keyframes pulseHint {
     0%, 100% { opacity: 0.85; transform: translateX(-50%) scale(1); }
@@ -547,6 +589,101 @@
   .forge-upgrade-btn:active {
     transform: scale(0.93);
   }
+
+  /* Modal Backdrop */
+  .modal-backdrop {
+    display: none;
+    position: absolute;
+    inset: 0;
+    background: rgba(4, 9, 18, 0.65);
+    backdrop-filter: blur(4px);
+    z-index: 45;
+  }
+  .modal-backdrop.active {
+    display: block;
+  }
+
+  /* Responsive layout for Mobile & Small Screens (No overlapping!) */
+  @media (max-width: 640px) {
+    #hud-overlay {
+      padding: 8px 10px;
+    }
+    .cheat-label {
+      display: none;
+    }
+    .hud-btn.cheat-toggle::after {
+      content: "密技";
+    }
+    .hud-btn.forge-btn-hud {
+      padding: 5px 9px;
+      font-size: 12px;
+    }
+    .hud-btn.cheat-toggle {
+      padding: 5px 9px;
+      font-size: 12px;
+    }
+    .money-pill, .backpack-pill {
+      padding: 4px 8px;
+      gap: 5px;
+      font-size: 13px;
+    }
+    .money-icon {
+      width: 22px;
+      height: 22px;
+      font-size: 13px;
+    }
+    .money-value {
+      font-size: 15px;
+    }
+    #weapon-hotbar {
+      bottom: 12px;
+      padding: 4px 6px;
+      gap: 4px;
+      border-radius: 14px;
+      max-width: 96vw;
+    }
+    .weapon-slot {
+      width: 44px;
+      height: 48px;
+      border-radius: 9px;
+    }
+    .weapon-slot .w-icon {
+      font-size: 18px;
+    }
+    .weapon-slot .w-name {
+      font-size: 8px;
+    }
+    #zoom-controls {
+      bottom: 78px;
+      right: 10px;
+    }
+    .zoom-btn {
+      width: 34px;
+      height: 34px;
+      font-size: 18px;
+    }
+    #touch-hint {
+      bottom: 74px;
+      font-size: 11px;
+      padding: 4px 10px;
+      max-width: 90vw;
+    }
+    .interaction-prompt {
+      bottom: 74px;
+      padding: 6px 14px;
+      font-size: 12px;
+    }
+    #quest-bar {
+      top: 56px;
+      left: 10px;
+      font-size: 12px;
+      padding: 5px 10px;
+      max-width: 92vw;
+    }
+    body.boss-active #quest-bar {
+      top: 130px;
+    }
+  }
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
@@ -576,8 +713,11 @@
   </div>
 
   <div class="top-right-group">
+    <button class="hud-btn forge-btn-hud" id="btn-open-forge-hud" title="營地武器鍛造工坊">
+      <span>⚒️</span> 鍛造工坊
+    </button>
     <button class="hud-btn cheat-toggle" id="btn-cheat-menu">
-      <span>⚡</span> 開發者作弊面板
+      <span>⚡</span> <span class="cheat-label">開發者作弊面板</span>
     </button>
     <button class="icon-btn" id="btn-sound" title="切換音效">🔊</button>
   </div>
@@ -647,6 +787,16 @@
 
 <!-- Instructions Toast -->
 <div id="touch-hint">👆 滑動螢幕 / WASD 移動 ｜ 金色箭頭導引下個解鎖目標</div>
+
+<!-- Interactive Proximity Prompt (Weapon Forge & Stations) -->
+<div id="interaction-prompt" class="interaction-prompt">
+  <span class="prompt-icon">⚒️</span>
+  <span class="prompt-text" id="interaction-prompt-text">進入武器鍛造台</span>
+  <span class="prompt-subtext">點擊或按 [E]</span>
+</div>
+
+<!-- Modal Backdrop -->
+<div id="modal-backdrop" class="modal-backdrop"></div>
 
 <!-- Respawn Alert -->
 <div id="respawn-banner">⚠️ 受到巨獸致命重擊！正在基地溫泉復原...</div>
@@ -920,11 +1070,16 @@ function spawnFloatingText(worldPos, text, type = 'money') {
       return;
     }
     const screenPos = new THREE.Vector3(worldPos.x, startY + offset, worldPos.z).project(camera);
-    const x = (screenPos.x * 0.5 + 0.5) * window.innerWidth;
-    const y = (-(screenPos.y * 0.5) + 0.5) * window.innerHeight;
-    el.style.left = `${x}px`;
-    el.style.top = `${y}px`;
-    el.style.opacity = opacity;
+    if (screenPos.z > 1.0) {
+      el.style.display = 'none';
+    } else {
+      el.style.display = 'block';
+      const x = (screenPos.x * 0.5 + 0.5) * window.innerWidth;
+      const y = (-(screenPos.y * 0.5) + 0.5) * window.innerHeight;
+      el.style.left = `${x}px`;
+      el.style.top = `${y}px`;
+      el.style.opacity = opacity;
+    }
     requestAnimationFrame(update);
   }
   requestAnimationFrame(update);
@@ -2303,6 +2458,7 @@ class AbyssalFrostDragon {
     this.group.position.set(0, 3.0, -85);
     this.group.visible = true;
     document.getElementById('boss-hud').classList.add('active');
+    document.body.classList.add('boss-active');
     this.updateHUD();
     spawnFloatingText(new THREE.Vector3(0, 5, -80), "👑 深淵冰霜巨龍・利維坦 降臨！", "thunder");
   }
@@ -2325,6 +2481,7 @@ class AbyssalFrostDragon {
     this.state = 'DEAD';
     this.group.visible = false;
     document.getElementById('boss-hud').classList.remove('active');
+    document.body.classList.remove('boss-active');
     audio.playLevelUp();
     spawnFloatingText(new THREE.Vector3(0, 4, -85), "🎉 討伐成功！極地霸主誕生！", "thunder");
 
@@ -2693,8 +2850,10 @@ class PlayerCharacter {
 
   refreshStackVisual() {
     GAME_STATE.backpack.forEach((item, idx) => {
-      item.mesh.position.set(0, idx * 0.38, 0);
-      item.mesh.rotation.set(0, 0, 0);
+      if (item.mesh && item.mesh.parent === this.stackAnchor) {
+        item.mesh.position.set(0, idx * 0.38, 0);
+        item.mesh.rotation.set(0, 0, 0);
+      }
     });
   }
 
@@ -2710,13 +2869,15 @@ class PlayerCharacter {
     const targetLocal = new THREE.Vector3(0, targetIdx * 0.38, 0);
     const targetWorld = this.stackAnchor.localToWorld(targetLocal.clone());
 
+    scene.add(mesh);
     addParabolaTween({
       object: mesh,
-      startPos: fromWorldPos.clone(),
+      startPos: fromWorldPos ? fromWorldPos.clone() : targetWorld,
       targetPos: targetWorld,
       arcHeight: 1.8,
       duration: 0.35,
       onComplete: () => {
+        scene.remove(mesh);
         this.stackAnchor.add(mesh);
         mesh.position.copy(targetLocal);
         mesh.rotation.set(0, 0, 0);
@@ -2871,6 +3032,19 @@ class PlayerCharacter {
 }
 
 const player = new PlayerCharacter();
+
+// Global Backpack Helper: Cleanly removes item from stackAnchor and scene (Never glitched or overlapping!)
+function removeItemFromBackpack(idx) {
+  if (idx < 0 || idx >= GAME_STATE.backpack.length) return null;
+  const item = GAME_STATE.backpack.splice(idx, 1)[0];
+  if (item && item.mesh) {
+    if (item.mesh.parent) item.mesh.parent.remove(item.mesh);
+    scene.remove(item.mesh);
+  }
+  updateHUD();
+  player.refreshStackVisual();
+  return item;
+}
 
 /* ==========================================================================
    3D GUIDE ARROW (金光地面導引指針)
@@ -3271,7 +3445,7 @@ setInterval(() => {
     const item = cutterIn.shift();
     scene.remove(item);
     const sliced = createSlicedFishMesh();
-    sliced.position.set(-2.0, 0.8, -3.0);
+    sliced.position.set(-2.0, 0.8 + cutterOut.length * 0.2, -3.0);
     scene.add(sliced);
     cutterOut.push(sliced);
     audio.playCut();
@@ -3335,13 +3509,12 @@ function checkInteractions(dt) {
   if (pPos.distanceTo(new THREE.Vector3(-3.5, 0, -3)) < 2.0 && cutterIn.length < 6) {
     const idx = GAME_STATE.backpack.findIndex(i => i.type === 'RAW_FISH');
     if (idx !== -1) {
-      const item = GAME_STATE.backpack.splice(idx, 1)[0];
-      updateHUD();
-      player.refreshStackVisual();
-      player.stackAnchor.remove(item.mesh);
-      item.mesh.position.set(-3.5, 0.8, -3.0);
-      scene.add(item.mesh);
-      cutterIn.push(item.mesh);
+      const item = removeItemFromBackpack(idx);
+      if (item) {
+        item.mesh.position.set(-3.5, 0.8 + cutterIn.length * 0.2, -3.0);
+        scene.add(item.mesh);
+        cutterIn.push(item.mesh);
+      }
     }
   }
 
@@ -3356,10 +3529,7 @@ function checkInteractions(dt) {
   if (pPos.distanceTo(new THREE.Vector3(4, 0, -4)) < 2.5) {
     const idx = GAME_STATE.backpack.findIndex(i => i.type === 'SLICED_FISH');
     if (idx !== -1) {
-      const item = GAME_STATE.backpack.splice(idx, 1)[0];
-      updateHUD();
-      player.refreshStackVisual();
-      scene.remove(item.mesh);
+      removeItemFromBackpack(idx);
       addCashBill('counter1', new THREE.Vector3(4, 0, -2.5), 20);
     }
   }
@@ -3368,11 +3538,8 @@ function checkInteractions(dt) {
   if (GAME_STATE.unlocked.counter2 && pPos.distanceTo(new THREE.Vector3(4, 0, 4)) < 2.5) {
     const idx = GAME_STATE.backpack.findIndex(i => i.type === 'BEAR_MEAT' || i.type === 'SHARK_MEAT');
     if (idx !== -1) {
-      const item = GAME_STATE.backpack.splice(idx, 1)[0];
-      updateHUD();
-      player.refreshStackVisual();
-      scene.remove(item.mesh);
-      const val = item.type === 'SHARK_MEAT' ? 150 : 60;
+      const val = GAME_STATE.backpack[idx].type === 'SHARK_MEAT' ? 150 : 60;
+      removeItemFromBackpack(idx);
       addCashBill('counter2', new THREE.Vector3(4, 0, 2.5), val);
     }
   }
@@ -3427,10 +3594,7 @@ function checkInteractions(dt) {
   if (pPos.distanceTo(new THREE.Vector3(-34, 0, -48)) < 2.5) {
     const idx = GAME_STATE.backpack.findIndex(i => i.type === 'WOLF_PELT');
     if (idx !== -1) {
-      const item = GAME_STATE.backpack.splice(idx, 1)[0];
-      updateHUD();
-      player.refreshStackVisual();
-      scene.remove(item.mesh);
+      removeItemFromBackpack(idx);
       player.addItemToBackpack('WINTER_COAT', new THREE.Vector3(-34, 1.2, -48));
       spawnFloatingText(pPos, "製成【禦寒皮衣】！", "info");
     }
@@ -3440,10 +3604,7 @@ function checkInteractions(dt) {
   if (pPos.distanceTo(new THREE.Vector3(-24, 0, -38)) < 2.5) {
     const idx = GAME_STATE.backpack.findIndex(i => i.type === 'WINTER_COAT');
     if (idx !== -1) {
-      const item = GAME_STATE.backpack.splice(idx, 1)[0];
-      updateHUD();
-      player.refreshStackVisual();
-      scene.remove(item.mesh);
+      removeItemFromBackpack(idx);
       addCashBill('coat', new THREE.Vector3(-24, 0, -36), 200);
     }
   }
@@ -3452,10 +3613,7 @@ function checkInteractions(dt) {
   if (pPos.distanceTo(new THREE.Vector3(34, 0, -48)) < 2.5) {
     const idx = GAME_STATE.backpack.findIndex(i => i.type === 'TUSK_FEATHER');
     if (idx !== -1) {
-      const item = GAME_STATE.backpack.splice(idx, 1)[0];
-      updateHUD();
-      player.refreshStackVisual();
-      scene.remove(item.mesh);
+      removeItemFromBackpack(idx);
       player.addItemToBackpack('DOWN_JACKET', new THREE.Vector3(34, 1.2, -48));
       spawnFloatingText(pPos, "製成【高級羽絨大衣】！", "info");
     }
@@ -3465,10 +3623,7 @@ function checkInteractions(dt) {
   if (pPos.distanceTo(new THREE.Vector3(24, 0, -38)) < 2.5) {
     const idx = GAME_STATE.backpack.findIndex(i => i.type === 'DOWN_JACKET');
     if (idx !== -1) {
-      const item = GAME_STATE.backpack.splice(idx, 1)[0];
-      updateHUD();
-      player.refreshStackVisual();
-      scene.remove(item.mesh);
+      removeItemFromBackpack(idx);
       addCashBill('down', new THREE.Vector3(24, 0, -36), 450);
     }
   }
@@ -3477,10 +3632,7 @@ function checkInteractions(dt) {
   if (pPos.distanceTo(new THREE.Vector3(34, 0, 48)) < 2.5) {
     const idx = GAME_STATE.backpack.findIndex(i => i.type === 'CRAB_SHELL');
     if (idx !== -1) {
-      const item = GAME_STATE.backpack.splice(idx, 1)[0];
-      updateHUD();
-      player.refreshStackVisual();
-      scene.remove(item.mesh);
+      removeItemFromBackpack(idx);
       player.addItemToBackpack('HOTPOT', new THREE.Vector3(34, 1.2, 48));
       spawnFloatingText(pPos, "熬製【豪華海陸火鍋】！", "info");
     }
@@ -3490,10 +3642,7 @@ function checkInteractions(dt) {
   if (pPos.distanceTo(new THREE.Vector3(24, 0, 38)) < 2.5) {
     const idx = GAME_STATE.backpack.findIndex(i => i.type === 'HOTPOT');
     if (idx !== -1) {
-      const item = GAME_STATE.backpack.splice(idx, 1)[0];
-      updateHUD();
-      player.refreshStackVisual();
-      scene.remove(item.mesh);
+      removeItemFromBackpack(idx);
       addCashBill('hotpot', new THREE.Vector3(24, 0, 36), 1000);
     }
   }
@@ -3502,10 +3651,7 @@ function checkInteractions(dt) {
   if (pPos.distanceTo(new THREE.Vector3(-34, 0, 48)) < 2.5) {
     const idx = GAME_STATE.backpack.findIndex(i => i.type === 'ENERGY_CORE');
     if (idx !== -1) {
-      const item = GAME_STATE.backpack.splice(idx, 1)[0];
-      updateHUD();
-      player.refreshStackVisual();
-      scene.remove(item.mesh);
+      removeItemFromBackpack(idx);
       player.addItemToBackpack('HEAT_BATTERY', new THREE.Vector3(-34, 1.2, 48));
       spawnFloatingText(pPos, "精煉【永動暖爐電池】！", "thunder");
     }
@@ -3515,10 +3661,7 @@ function checkInteractions(dt) {
   if (pPos.distanceTo(new THREE.Vector3(-24, 0, 38)) < 2.5) {
     const idx = GAME_STATE.backpack.findIndex(i => i.type === 'HEAT_BATTERY');
     if (idx !== -1) {
-      const item = GAME_STATE.backpack.splice(idx, 1)[0];
-      updateHUD();
-      player.refreshStackVisual();
-      scene.remove(item.mesh);
+      removeItemFromBackpack(idx);
       addCashBill('battery', new THREE.Vector3(-24, 0, 36), 2500);
     }
   }
@@ -3527,17 +3670,22 @@ function checkInteractions(dt) {
   if (pPos.distanceTo(new THREE.Vector3(0, 0, -85)) < 4.0 && abyssalDragon.state === 'DEAD') {
     const idx = GAME_STATE.backpack.findIndex(i => i.type === 'HEAT_BATTERY' || i.type === 'ENERGY_CORE');
     if (idx !== -1) {
-      const item = GAME_STATE.backpack.splice(idx, 1)[0];
-      updateHUD();
-      player.refreshStackVisual();
-      scene.remove(item.mesh);
+      removeItemFromBackpack(idx);
       abyssalDragon.summon();
     }
   }
 
-  // Stand on Central Forge (0, 0, -4.5): Open Forge Dialog
-  if (pPos.distanceTo(new THREE.Vector3(0, 0, -4.5)) < 2.8) {
-    openForgeModal();
+  // Stand near Central Forge (0, 0, -4.5): Proximity Prompt (Never block view or get stuck when passing by!)
+  const distToForge = pPos.distanceTo(new THREE.Vector3(0, 0, -4.5));
+  if (distToForge < 3.2) {
+    showInteractionPrompt("⚒️ 進入武器鍛造台", () => openForgeModal(), 'forge');
+  } else {
+    if (distToForge > 5.5 && isForgeOpen) {
+      closeForgeModal();
+    }
+    if (currentPromptSource === 'forge') {
+      hideInteractionPrompt();
+    }
   }
 
   // Unlock Pads payment
@@ -3561,6 +3709,17 @@ function checkInteractions(dt) {
 /* ==========================================================================
    INPUT CONTROLS & CAMERA ZOOM
    ========================================================================== */
+function dismissTouchHint() {
+  const hint = document.getElementById('touch-hint');
+  if (hint && !hint.dataset.dismissed) {
+    hint.dataset.dismissed = "true";
+    hint.style.transition = "opacity 0.6s ease-out";
+    hint.style.opacity = "0";
+    setTimeout(() => { if (hint.parentNode) hint.parentNode.removeChild(hint); }, 700);
+  }
+}
+setTimeout(dismissTouchHint, 7000);
+
 const moveInput = new THREE.Vector3(0, 0, 0);
 let touchActive = false;
 const joystickZone = document.getElementById('joystick-zone');
@@ -3569,6 +3728,7 @@ const joystickKnob = document.getElementById('joystick-knob');
 let touchStartX = 0, touchStartY = 0;
 
 joystickZone.addEventListener('pointerdown', (e) => {
+  dismissTouchHint();
   touchActive = true;
   touchStartX = e.clientX; touchStartY = e.clientY;
   joystickBase.style.display = 'block';
@@ -3594,10 +3754,25 @@ window.addEventListener('pointerup', () => {
 
 const keys = {};
 window.addEventListener('keydown', (e) => {
+  dismissTouchHint();
   keys[e.key.toLowerCase()] = true;
   // Hotbar keys 1~6
   if (['1','2','3','4','5','6'].includes(e.key)) {
     switchWeapon(parseInt(e.key) - 1);
+  }
+  // Quick interact / forge toggle
+  if (e.key === 'e' || e.key === 'E') {
+    if (isForgeOpen) {
+      closeForgeModal();
+    } else if (player.group.position.distanceTo(new THREE.Vector3(0, 0, -4.5)) < 3.5) {
+      openForgeModal();
+    }
+  }
+  // Escape to close all modals
+  if (e.key === 'Escape') {
+    closeForgeModal();
+    cheatModal.classList.remove('active');
+    modalBackdrop.classList.remove('active');
   }
 });
 window.addEventListener('keyup', (e) => {
@@ -3625,16 +3800,66 @@ document.querySelectorAll('.weapon-slot').forEach(slot => {
 });
 
 /* ==========================================================================
-   FORGE MODAL & WEAPON UPGRADES
+   FORGE MODAL & PROXIMITY INTERACTION SYSTEM
    ========================================================================== */
+const modalBackdrop = document.getElementById('modal-backdrop');
 const forgeModal = document.getElementById('forge-modal');
+const interactionPrompt = document.getElementById('interaction-prompt');
+let isForgeOpen = false;
+let currentPromptAction = null;
+let currentPromptSource = null;
+
+function showInteractionPrompt(text, action, source = 'forge') {
+  if (isForgeOpen) {
+    hideInteractionPrompt();
+    return;
+  }
+  currentPromptAction = action;
+  currentPromptSource = source;
+  document.getElementById('interaction-prompt-text').textContent = text;
+  interactionPrompt.classList.add('active');
+}
+
+function hideInteractionPrompt() {
+  currentPromptAction = null;
+  currentPromptSource = null;
+  interactionPrompt.classList.remove('active');
+}
+
+interactionPrompt.addEventListener('click', (e) => {
+  e.stopPropagation();
+  if (currentPromptAction) currentPromptAction();
+});
+
 function openForgeModal() {
+  isForgeOpen = true;
   forgeModal.classList.add('active');
+  modalBackdrop.classList.add('active');
+  hideInteractionPrompt();
   updateForgeUI();
 }
-document.getElementById('btn-close-forge').addEventListener('click', () => {
+
+function closeForgeModal() {
+  isForgeOpen = false;
   forgeModal.classList.remove('active');
+  if (!cheatModal.classList.contains('active')) {
+    modalBackdrop.classList.remove('active');
+  }
+}
+
+document.getElementById('btn-close-forge').addEventListener('click', (e) => {
+  e.stopPropagation();
+  closeForgeModal();
 });
+
+const btnOpenForgeHud = document.getElementById('btn-open-forge-hud');
+if (btnOpenForgeHud) {
+  btnOpenForgeHud.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (isForgeOpen) closeForgeModal();
+    else openForgeModal();
+  });
+}
 
 function updateForgeUI() {
   const dmgCost = GAME_STATE.weaponUpgrades.dmgLv * 300;
@@ -3679,15 +3904,25 @@ document.getElementById('btn-upgrade-spd').addEventListener('click', () => {
 });
 
 /* ==========================================================================
-   DEVELOPER CHEAT PANEL
+   DEVELOPER CHEAT PANEL & MODAL BACKDROP
    ========================================================================== */
 const cheatModal = document.getElementById('cheat-modal');
 document.getElementById('btn-cheat-menu').addEventListener('click', (e) => {
   e.stopPropagation();
-  cheatModal.classList.toggle('active');
+  const willOpen = !cheatModal.classList.contains('active');
+  cheatModal.classList.toggle('active', willOpen);
+  modalBackdrop.classList.toggle('active', willOpen || isForgeOpen);
 });
 document.getElementById('btn-close-cheat').addEventListener('click', () => {
   cheatModal.classList.remove('active');
+  if (!isForgeOpen) modalBackdrop.classList.remove('active');
+});
+
+// Click Backdrop to close any open modal
+modalBackdrop.addEventListener('click', () => {
+  closeForgeModal();
+  cheatModal.classList.remove('active');
+  modalBackdrop.classList.remove('active');
 });
 
 // Sound Toggle
@@ -3771,8 +4006,9 @@ function gameLoop(now) {
   camera.position.lerp(cameraTargetPos, 0.08);
   camera.lookAt(player.group.position.x, player.group.position.y + 1, player.group.position.z);
 
-  // Update Guide Arrow
+  // Update Guide Arrow & 3D Signs
   updateGuideArrow();
+  if (forgeSign) forgeSign.lookAt(camera.position);
 
   // Update Tweens
   updateTweens(dt);
