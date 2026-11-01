@@ -1923,6 +1923,19 @@ function switchWeapon(id) {
   spawnFloatingText(player.group.position, `切換武器: ${WEAPONS[id].name}`, "info");
 }
 
+/* --------------------------------------------------------------------------
+   SAFE ZONE SANCTUARY LOGIC (安全避難所與溫泉小屋防護區)
+   -------------------------------------------------------------------------- */
+function isInSafeZone(pos) {
+  if (!pos) return false;
+  // 1. Central Base Camp & Hot Spring Cabin Hub (0, 0) - radius 17
+  if (pos.x * pos.x + pos.z * pos.z <= 17 * 17) return true;
+  // 2. Zone 3 Geothermal Hot Spring Pool & Gunsmith (48, 48) - radius 14
+  const dx3 = pos.x - 48, dz3 = pos.z - 48;
+  if (dx3 * dx3 + dz3 * dz3 <= 14 * 14) return true;
+  return false;
+}
+
 /* ==========================================================================
    ENEMIES: CORE (SNOW BEAR & GIANT SHARK)
    ========================================================================== */
@@ -1996,8 +2009,17 @@ class SnowBear {
     this.hpBarFill.lookAt(camera.position);
     this.hpBarFill.scale.x = Math.max(0, this.hp / this.maxHp);
 
+    // Repel Snow Bear from Base Safe Zone
+    if (this.group.position.length() < 17) {
+      this.group.position.setLength(17);
+    }
+
     const baitTarget = new THREE.Vector3(0, 0, -15);
     const pPos = player.group.position;
+    if (this.state === 'FIGHTING' && (isInSafeZone(pPos) || player.isDead)) {
+      this.state = 'WALKING_TO_BAIT';
+    }
+
     if (this.state === 'WALKING_TO_BAIT') {
       const dist = this.group.position.distanceTo(baitTarget);
       if (dist > 1.2) {
@@ -2099,6 +2121,8 @@ class ArcticWolf {
     this.speed = 4.8;
     this.state = 'DEAD';
     this.respawnTimer = 0;
+    this.attackCooldown = 0;
+    this.homePos = new THREE.Vector3(-48 + offset.x, 0, -48 + offset.z);
 
     const wolfMat = new THREE.MeshLambertMaterial({ color: 0xadb5bd, flatShading: true });
     const body = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.7, 1.5), wolfMat);
@@ -2109,13 +2133,15 @@ class ArcticWolf {
     snout.rotation.x = -Math.PI / 2; snout.position.set(0, 0.8, -1.3);
     this.group.add(body); this.group.add(head); this.group.add(snout);
 
-    this.group.position.set(-48 + offset.x, 0, -48 + offset.z);
+    this.group.position.copy(this.homePos);
     this.group.visible = false;
     scene.add(this.group);
   }
   spawn() {
     this.hp = this.maxHp;
     this.state = 'ALIVE';
+    this.attackCooldown = 0;
+    this.group.position.copy(this.homePos);
     this.group.visible = true;
   }
   takeDamage(amt, attackerPos) {
@@ -2137,6 +2163,8 @@ class ArcticWolf {
       scene.add(pelt);
       droppedWolfPelts.push(pelt);
       spawnFloatingText(this.group.position, "掉落狼皮！", "info");
+      // Reset position to home pine forest immediately so corpse mesh never stays in base
+      this.group.position.copy(this.homePos);
     }
   }
   update(dt) {
@@ -2147,15 +2175,40 @@ class ArcticWolf {
       }
       return;
     }
-    // Attack player if close
+
+    if (this.attackCooldown > 0) this.attackCooldown -= dt;
+
+    // Hard Repulsion from Central Base Camp Safe Zone (radius 17) & Hot Spring (radius 14)
+    if (this.group.position.length() < 17) {
+      this.group.position.setLength(17);
+    }
+    const distToHS = new THREE.Vector2(this.group.position.x - 48, this.group.position.z - 48).length();
+    if (distToHS < 14) {
+      const dirHS = new THREE.Vector2(this.group.position.x - 48, this.group.position.z - 48).normalize();
+      this.group.position.x = 48 + dirHS.x * 14;
+      this.group.position.z = 48 + dirHS.y * 14;
+    }
+
+    // AI Check: Only chase when player is alive, outside safe zones, and within forest territory leash
     const pPos = player.group.position;
-    const dist = this.group.position.distanceTo(pPos);
-    if (dist < 18) {
+    const distToPlayer = this.group.position.distanceTo(pPos);
+    const distFromHome = this.group.position.distanceTo(this.homePos);
+    const playerInSafe = isInSafeZone(pPos) || player.isDead;
+
+    if (distToPlayer < 18 && !playerInSafe && distFromHome < 26) {
       const dir = pPos.clone().sub(this.group.position).normalize();
       this.group.position.addScaledVector(dir, this.speed * dt);
       this.group.rotation.y = Math.atan2(dir.x, dir.z);
-      if (dist < 1.4) {
+      if (distToPlayer < 1.5 && this.attackCooldown <= 0) {
         player.takeDamage(6);
+        this.attackCooldown = 1.0; // 1-second attack cooldown
+      }
+    } else {
+      // Return to home territory in pine forest
+      if (distFromHome > 1.0) {
+        const dirHome = this.homePos.clone().sub(this.group.position).normalize();
+        this.group.position.addScaledVector(dirHome, this.speed * 0.7 * dt);
+        this.group.rotation.y = Math.atan2(dirHome.x, dirHome.z);
       }
     }
   }
@@ -2233,6 +2286,7 @@ class SnowMammoth {
     this.hp = 180;
     this.state = 'DEAD';
     this.respawnTimer = 0;
+    this.homePos = new THREE.Vector3(54, 0, -54);
 
     const woolMat = new THREE.MeshLambertMaterial({ color: 0x582f0e });
     const body = new THREE.Mesh(new THREE.BoxGeometry(2.4, 2.0, 3.2), woolMat);
@@ -2241,13 +2295,14 @@ class SnowMammoth {
     tuskL.position.set(0.8, 1.4, -1.8); tuskL.rotation.x = -Math.PI / 4;
     const tuskR = tuskL.clone(); tuskR.position.x = -0.8;
     this.group.add(body); this.group.add(tuskL); this.group.add(tuskR);
-    this.group.position.set(54, 0, -54);
+    this.group.position.copy(this.homePos);
     this.group.visible = false;
     scene.add(this.group);
   }
   spawn() {
     this.hp = this.maxHp;
     this.state = 'ALIVE';
+    this.group.position.copy(this.homePos);
     this.group.visible = true;
   }
   takeDamage(amt, attackerPos) {
@@ -2263,6 +2318,7 @@ class SnowMammoth {
       loot.position.copy(this.group.position);
       scene.add(loot);
       droppedTuskFeathers.push(loot);
+      this.group.position.copy(this.homePos);
     }
   }
   update(dt) {
@@ -2289,6 +2345,8 @@ class MagmaCrab {
     this.hp = 240;
     this.state = 'DEAD';
     this.respawnTimer = 0;
+    this.attackCooldown = 0;
+    this.homePos = new THREE.Vector3(48, 0, 48);
 
     const shell = new THREE.Mesh(new THREE.SphereGeometry(1.2, 8, 8), materials.crabShell);
     shell.scale.set(1.4, 0.6, 1.1); shell.position.y = 0.8;
@@ -2296,13 +2354,15 @@ class MagmaCrab {
     clawL.position.set(1.4, 0.7, -0.6);
     const clawR = clawL.clone(); clawR.position.x = -1.4;
     this.group.add(shell); this.group.add(clawL); this.group.add(clawR);
-    this.group.position.set(48, 0, 48);
+    this.group.position.copy(this.homePos);
     this.group.visible = false;
     scene.add(this.group);
   }
   spawn() {
     this.hp = this.maxHp;
     this.state = 'ALIVE';
+    this.group.position.copy(this.homePos);
+    this.attackCooldown = 0;
     this.group.visible = true;
     spawnFloatingText(this.group.position, "⚠️ 熔岩甲殼蟹從岩漿池爬出！", "dmg");
   }
@@ -2325,6 +2385,7 @@ class MagmaCrab {
         scene.add(loot);
         droppedCrabShells.push(loot);
       }
+      this.group.position.copy(this.homePos);
     }
   }
   update(dt) {
@@ -2335,12 +2396,29 @@ class MagmaCrab {
       }
       return;
     }
-    const dist = this.group.position.distanceTo(player.group.position);
-    if (dist < 14) {
-      const dir = player.group.position.clone().sub(this.group.position).normalize();
+
+    if (this.attackCooldown > 0) this.attackCooldown -= dt;
+    if (this.group.position.length() < 17) this.group.position.setLength(17);
+
+    const pPos = player.group.position;
+    const dist = this.group.position.distanceTo(pPos);
+    const distFromHome = this.group.position.distanceTo(this.homePos);
+    const playerInSafe = isInSafeZone(pPos) || player.isDead;
+
+    if (dist < 14 && !playerInSafe && distFromHome < 26) {
+      const dir = pPos.clone().sub(this.group.position).normalize();
       this.group.position.addScaledVector(dir, 2.8 * dt);
       this.group.rotation.y = Math.atan2(dir.x, dir.z);
-      if (dist < 1.8) player.takeDamage(12);
+      if (dist < 1.8 && this.attackCooldown <= 0) {
+        player.takeDamage(12);
+        this.attackCooldown = 1.2;
+      }
+    } else {
+      if (distFromHome > 1.0) {
+        const dirHome = this.homePos.clone().sub(this.group.position).normalize();
+        this.group.position.addScaledVector(dirHome, 2.0 * dt);
+        this.group.rotation.y = Math.atan2(dirHome.x, dirHome.z);
+      }
     }
   }
 }
@@ -2358,6 +2436,8 @@ class AncientIceGolem {
     this.speed = 1.8;
     this.state = 'DEAD';
     this.respawnTimer = 0;
+    this.attackCooldown = 0;
+    this.homePos = new THREE.Vector3(-48, 0, 48);
 
     const body = new THREE.Mesh(new THREE.DodecahedronGeometry(1.6), materials.iceBlock);
     body.position.y = 2.4;
@@ -2367,13 +2447,15 @@ class AncientIceGolem {
     armL.position.set(2.0, 2.2, 0);
     const armR = armL.clone(); armR.position.x = -2.0;
     this.group.add(body); this.group.add(core); this.group.add(armL); this.group.add(armR);
-    this.group.position.set(-48, 0, 48);
+    this.group.position.copy(this.homePos);
     this.group.visible = false;
     scene.add(this.group);
   }
   spawn() {
     this.hp = this.maxHp;
     this.state = 'ALIVE';
+    this.group.position.copy(this.homePos);
+    this.attackCooldown = 0;
     this.group.visible = true;
     spawnFloatingText(this.group.position, "⚠️ 遠古冰霜魔像復甦！", "dmg");
   }
@@ -2392,6 +2474,7 @@ class AncientIceGolem {
         scene.add(core);
         droppedEnergyCores.push(core);
       }
+      this.group.position.copy(this.homePos);
     }
   }
   update(dt) {
@@ -2402,12 +2485,29 @@ class AncientIceGolem {
       }
       return;
     }
-    const dist = this.group.position.distanceTo(player.group.position);
-    if (dist < 18) {
-      const dir = player.group.position.clone().sub(this.group.position).normalize();
+
+    if (this.attackCooldown > 0) this.attackCooldown -= dt;
+    if (this.group.position.length() < 17) this.group.position.setLength(17);
+
+    const pPos = player.group.position;
+    const dist = this.group.position.distanceTo(pPos);
+    const distFromHome = this.group.position.distanceTo(this.homePos);
+    const playerInSafe = isInSafeZone(pPos) || player.isDead;
+
+    if (dist < 18 && !playerInSafe && distFromHome < 28) {
+      const dir = pPos.clone().sub(this.group.position).normalize();
       this.group.position.addScaledVector(dir, this.speed * dt);
       this.group.rotation.y = Math.atan2(dir.x, dir.z);
-      if (dist < 2.2) player.takeDamage(20);
+      if (dist < 2.2 && this.attackCooldown <= 0) {
+        player.takeDamage(20);
+        this.attackCooldown = 1.5;
+      }
+    } else {
+      if (distFromHome > 1.0) {
+        const dirHome = this.homePos.clone().sub(this.group.position).normalize();
+        this.group.position.addScaledVector(dirHome, this.speed * 0.7 * dt);
+        this.group.rotation.y = Math.atan2(dirHome.x, dirHome.z);
+      }
     }
   }
 }
@@ -2768,6 +2868,7 @@ class PlayerCharacter {
     this.hp = 100;
     this.speed = 9.2;
     this.isDead = false;
+    this.isInvulnerable = false;
     this.attackCooldown = 0;
     this.weaponSwingTime = 0;
 
@@ -2819,7 +2920,7 @@ class PlayerCharacter {
   }
 
   takeDamage(amt) {
-    if (this.isDead) return;
+    if (this.isDead || this.isInvulnerable || isInSafeZone(this.group.position)) return;
     this.hp -= amt;
     audio.playHit();
     spawnFloatingText(this.group.position, `-${Math.round(amt)} HP!`, "dmg");
@@ -2839,12 +2940,22 @@ class PlayerCharacter {
     }
     updateHUD();
 
+    // Reset encroaching wolves and wild beasts back to their territory
+    wolves.forEach(w => {
+      w.group.position.copy(w.homePos);
+      w.attackCooldown = 2.0;
+    });
+    if (typeof magmaCrab !== 'undefined' && magmaCrab.group) magmaCrab.group.position.copy(magmaCrab.homePos);
+    if (typeof ancientGolem !== 'undefined' && ancientGolem.group) ancientGolem.group.position.copy(ancientGolem.homePos);
+
     setTimeout(() => {
       this.group.position.set(0, 0, 0);
       this.hp = this.maxHp;
       this.isDead = false;
+      this.isInvulnerable = true;
+      setTimeout(() => { this.isInvulnerable = false; }, 3000);
       banner.classList.remove('active');
-      spawnFloatingText(new THREE.Vector3(0, 2, 0), "溫泉療癒完畢！", "info");
+      spawnFloatingText(new THREE.Vector3(0, 2, 0), "溫泉療癒完畢！(3秒聖盾庇護)", "info");
     }, 1600);
   }
 
@@ -3003,6 +3114,11 @@ class PlayerCharacter {
     const hpPct = Math.max(0, this.hp / this.maxHp);
     this.hpBarFill.scale.x = hpPct;
     this.hpBarFill.material.color.setHex(hpPct > 0.4 ? 0x55ff55 : 0xff3333);
+
+    // Hot spring sanctuary natural regeneration
+    if (isInSafeZone(this.group.position) && this.hp < this.maxHp) {
+      this.hp = Math.min(this.maxHp, this.hp + 25 * dt);
+    }
 
     // Movement
     if (moveInput.length() > 0.05) {
