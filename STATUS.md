@@ -18,7 +18,7 @@
 - `family`：PTT DC_SALE 二手相機搜尋小工具 (GitHub + Vercel)
 - `google-jobs`：Google 職缺爬蟲與 RWD 頁面 (GitHub + Vercel，每日 08:00 自動更新)
 - `deco-budget`：裝潢四欄比對與視覺化分類篩選系統 (基於 merge.csv，支援 Chart.js 互動圖表)
-- `game`：極地生存 3D 放置經營 (修復看板初始化 ReferenceError、全物件深色描邊、碰觸動態看板，Three.js + Vercel)
+- `game`：寒霜啟示錄廣告復刻版 (伐木築橋、巨型綠能煙囪、美鈔堆拾取、生還者營舍與礦車軌道，Three.js + Vercel)
 
 ## GitHub + Vercel 同步規範 (SOP)
 - **全新專案**：`git init && git add . && git commit -m "feat: initial" && gh repo create <名稱> --public --source=. --remote=origin --push && vercel --prod --yes`
