@@ -1,0 +1,2768 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>極地生存與自動化產線 - 3D 街機放置經營</title>
+<style>
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    touch-action: none;
+  }
+  html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #0d1b2a;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang TC", "Microsoft JhengHei", sans-serif;
+  }
+  #webgl-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+  }
+  /* Top HUD */
+  #hud-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    pointer-events: none;
+    z-index: 10;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 16px 20px;
+  }
+  .hud-panel {
+    pointer-events: auto;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .money-pill {
+    background: rgba(13, 27, 42, 0.85);
+    border: 2px solid #ffd166;
+    border-radius: 28px;
+    padding: 8px 18px 8px 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.4), 0 0 12px rgba(255, 209, 102, 0.3);
+    transition: transform 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+  .money-pill.bounce {
+    transform: scale(1.18);
+  }
+  .money-icon {
+    width: 32px;
+    height: 32px;
+    background: radial-gradient(circle at 35% 35%, #ffeaa7, #fdcb6e, #e17055);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 900;
+    color: #4a2800;
+    font-size: 18px;
+    border: 2px solid #fff;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+  }
+  .money-value {
+    color: #fff;
+    font-size: 24px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+    font-variant-numeric: tabular-nums;
+  }
+  .backpack-pill {
+    background: rgba(13, 27, 42, 0.85);
+    border: 2px solid #4cc9f0;
+    border-radius: 24px;
+    padding: 8px 16px;
+    color: #e0f2fe;
+    font-size: 15px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  }
+  .backpack-pill .bag-icon {
+    font-size: 18px;
+  }
+
+  /* Mission Banner */
+  #quest-bar {
+    position: absolute;
+    top: 76px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: linear-gradient(135deg, rgba(20, 35, 55, 0.92), rgba(10, 20, 35, 0.92));
+    border: 1.5px solid #70e000;
+    border-radius: 20px;
+    padding: 8px 22px;
+    color: #ffffff;
+    font-size: 15px;
+    font-weight: 700;
+    z-index: 10;
+    pointer-events: none;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.4), 0 0 10px rgba(112, 224, 0, 0.25);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    white-space: nowrap;
+    transition: all 0.3s ease;
+  }
+  #quest-bar .quest-tag {
+    background: #70e000;
+    color: #0b1d07;
+    font-size: 11px;
+    font-weight: 900;
+    padding: 3px 8px;
+    border-radius: 8px;
+    letter-spacing: 0.5px;
+  }
+
+  /* Top Right Controls */
+  .top-right-group {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    pointer-events: auto;
+  }
+  .hud-btn {
+    background: linear-gradient(145deg, #38b000, #007200);
+    border: 2px solid #70e000;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 800;
+    padding: 9px 14px;
+    border-radius: 18px;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: transform 0.1s, filter 0.1s;
+  }
+  .hud-btn:active {
+    transform: scale(0.94);
+    filter: brightness(1.2);
+  }
+  .icon-btn {
+    background: rgba(13, 27, 42, 0.85);
+    border: 2px solid #748cab;
+    color: #fff;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    transition: transform 0.1s;
+  }
+  .icon-btn:active {
+    transform: scale(0.9);
+  }
+
+  /* Virtual Joystick Overlay */
+  #joystick-zone {
+    position: absolute;
+    inset: 0;
+    z-index: 5;
+    pointer-events: auto;
+  }
+  #joystick-base {
+    position: absolute;
+    width: 120px;
+    height: 120px;
+    margin-left: -60px;
+    margin-top: -60px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.03) 70%);
+    border: 2px solid rgba(255,255,255,0.3);
+    pointer-events: none;
+    display: none;
+    box-shadow: 0 0 20px rgba(0,0,0,0.3);
+  }
+  #joystick-knob {
+    position: absolute;
+    width: 52px;
+    height: 52px;
+    margin-left: -26px;
+    margin-top: -26px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #ffffff, #90e0ef);
+    border: 2px solid #0077b6;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    pointer-events: none;
+  }
+
+  /* Instructions Toast / Help */
+  #touch-hint {
+    position: absolute;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(10, 20, 30, 0.75);
+    backdrop-filter: blur(4px);
+    border: 1px solid rgba(255,255,255,0.15);
+    color: #bde0fe;
+    padding: 8px 18px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    z-index: 10;
+    pointer-events: none;
+    text-align: center;
+    letter-spacing: 0.5px;
+    animation: pulseHint 2s infinite ease-in-out;
+  }
+  @keyframes pulseHint {
+    0%, 100% { opacity: 0.85; transform: translateX(-50%) scale(1); }
+    50% { opacity: 0.5; transform: translateX(-50%) scale(0.98); }
+  }
+
+  /* 3D World Floating Text Canvas */
+  #floating-text-container {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 8;
+    overflow: hidden;
+  }
+  .floating-label {
+    position: absolute;
+    font-weight: 900;
+    font-size: 16px;
+    pointer-events: none;
+    transform: translate(-50%, -50%);
+    transition: opacity 0.2s ease-out;
+    text-shadow: 0 2px 5px rgba(0,0,0,0.8), 0 0 8px rgba(0,0,0,0.5);
+  }
+  .floating-label.money {
+    color: #55ff55;
+    font-size: 20px;
+  }
+  .floating-label.dmg {
+    color: #ff3344;
+    font-size: 22px;
+  }
+  .floating-label.info {
+    color: #ffd166;
+    font-size: 16px;
+  }
+
+  /* Respawn Overlay */
+  #respawn-banner {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.8);
+    background: rgba(180, 20, 30, 0.92);
+    border: 3px solid #ff4d4d;
+    border-radius: 20px;
+    padding: 20px 40px;
+    color: #ffffff;
+    font-size: 28px;
+    font-weight: 900;
+    text-align: center;
+    z-index: 30;
+    pointer-events: none;
+    opacity: 0;
+    box-shadow: 0 0 40px rgba(255, 50, 50, 0.7);
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+  #respawn-banner.active {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+</style>
+<!-- Three.js CDN -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+
+<div id="webgl-container"></div>
+<div id="floating-text-container"></div>
+
+<!-- Touch/Mouse Zone -->
+<div id="joystick-zone">
+  <div id="joystick-base">
+    <div id="joystick-knob"></div>
+  </div>
+</div>
+
+<!-- Top HUD -->
+<div id="hud-overlay">
+  <div class="hud-panel">
+    <div class="money-pill" id="money-pill">
+      <div class="money-icon">$</div>
+      <div class="money-value" id="money-display">0</div>
+    </div>
+    <div class="backpack-pill">
+      <span class="bag-icon">🎒</span>
+      <span id="backpack-display">0 / 10</span>
+    </div>
+  </div>
+
+  <div class="top-right-group">
+    <button class="hud-btn" id="btn-cheat">
+      <span>💰</span> +$500 測試金幣
+    </button>
+    <button class="icon-btn" id="btn-sound" title="切換音效">🔊</button>
+  </div>
+</div>
+
+<!-- Dynamic Quest Banner -->
+<div id="quest-bar">
+  <span class="quest-tag">當前目標</span>
+  <span id="quest-text">步驟 1：前往西側凍魚區拾取「凍魚」並搬運至「自動切割機」</span>
+</div>
+
+<!-- Touch Instruction -->
+<div id="touch-hint">👆 手指滑動螢幕 / WASD / 方向鍵 控制角色移動</div>
+
+<!-- Respawn Alert -->
+<div id="respawn-banner">⚠️ 受到巨獸致命重擊！正在基地溫泉復原...</div>
+
+<script>
+/* ==========================================================================
+   极地生存与自动化产线 (Arctic Idle Tycoon 3D)
+   Full implementation in Three.js Low-poly
+   ========================================================================== */
+
+// --- Audio Synthesizer (Web Audio API) ---
+class SoundManager {
+  constructor() {
+    this.ctx = null;
+    this.muted = false;
+  }
+  init() {
+    if (!this.ctx) {
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      this.ctx = new AudioContext();
+    }
+    if (this.ctx.state === 'suspended') {
+      this.ctx.resume();
+    }
+  }
+  playCoin() {
+    if (this.muted) return;
+    this.init();
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    const t = this.ctx.currentTime;
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(987.77, t); // B5
+    osc.frequency.setValueAtTime(1318.51, t + 0.08); // E6
+    gain.gain.setValueAtTime(0.12, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    osc.start(t);
+    osc.stop(t + 0.35);
+  }
+  playPop() {
+    if (this.muted) return;
+    this.init();
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    const t = this.ctx.currentTime;
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(350, t);
+    osc.frequency.exponentialRampToValueAtTime(800, t + 0.1);
+    gain.gain.setValueAtTime(0.1, t);
+    gain.gain.linearRampToValueAtTime(0.001, t + 0.12);
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    osc.start(t);
+    osc.stop(t + 0.12);
+  }
+  playPay() {
+    if (this.muted) return;
+    this.init();
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    const t = this.ctx.currentTime;
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(600 + Math.random() * 200, t);
+    gain.gain.setValueAtTime(0.06, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.08);
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    osc.start(t);
+    osc.stop(t + 0.08);
+  }
+  playUnlock() {
+    if (this.muted) return;
+    this.init();
+    const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+    notes.forEach((freq, idx) => {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      const t = this.ctx.currentTime + idx * 0.09;
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(freq, t);
+      gain.gain.setValueAtTime(0.15, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start(t);
+      osc.stop(t + 0.3);
+    });
+  }
+  playHit() {
+    if (this.muted) return;
+    this.init();
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    const t = this.ctx.currentTime;
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(150, t);
+    osc.frequency.linearRampToValueAtTime(40, t + 0.12);
+    gain.gain.setValueAtTime(0.15, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    osc.start(t);
+    osc.stop(t + 0.15);
+  }
+  playShoot() {
+    if (this.muted) return;
+    this.init();
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    const t = this.ctx.currentTime;
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(800, t);
+    osc.frequency.exponentialRampToValueAtTime(120, t + 0.15);
+    gain.gain.setValueAtTime(0.1, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    osc.start(t);
+    osc.stop(t + 0.15);
+  }
+  playSaw() {
+    if (this.muted) return;
+    this.init();
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    const t = this.ctx.currentTime;
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(220, t);
+    gain.gain.setValueAtTime(0.03, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    osc.start(t);
+    osc.stop(t + 0.2);
+  }
+}
+const audio = new SoundManager();
+
+// --- Floating Text Effect ---
+const floatContainer = document.getElementById('floating-text-container');
+function spawnFloatingText(worldPos, text, type = 'money') {
+  const el = document.createElement('div');
+  el.className = `floating-label ${type}`;
+  el.textContent = text;
+  floatContainer.appendChild(el);
+
+  const startY = worldPos.y;
+  let offset = 0;
+  let opacity = 1;
+
+  function update() {
+    offset += 0.8;
+    opacity -= 0.02;
+    if (opacity <= 0) {
+      if (el.parentNode) el.parentNode.removeChild(el);
+      return;
+    }
+    const screenPos = worldPos.clone();
+    screenPos.y = startY + offset * 0.04;
+    screenPos.project(camera);
+
+    const x = (screenPos.x * 0.5 + 0.5) * window.innerWidth;
+    const y = (-screenPos.y * 0.5 + 0.5) * window.innerHeight;
+
+    el.style.left = `${x}px`;
+    el.style.top = `${y}px`;
+    el.style.opacity = opacity;
+
+    requestAnimationFrame(update);
+  }
+  requestAnimationFrame(update);
+}
+
+// --- Game State & Progress Tracking ---
+const GAME_STATE = {
+  money: 0,
+  maxBackpack: 10,
+  backpack: [], // items currently on back: { type: 'RAW_FISH' | 'SLICED_FISH' | 'BEAR_MEAT' | 'SHARK_MEAT', mesh: Object3D }
+  unlocked: {
+    conveyor1: false,  // $100: Fish Pile -> Cutter
+    conveyor2: false,  // $150: Cutter -> Counter 1
+    counter2: false,   // $250: Premium meat stall ($60 / $150)
+    mercenary: false,  // $400: AI hunters
+    ballista: false    // $800: Lake auto crossbow
+  },
+  unlockCosts: {
+    conveyor1: 100,
+    conveyor2: 150,
+    counter2: 250,
+    mercenary: 400,
+    ballista: 800
+  },
+  unlockProgress: {
+    conveyor1: 0,
+    conveyor2: 0,
+    counter2: 0,
+    mercenary: 0,
+    ballista: 0
+  }
+};
+
+// UI Elements
+const moneyDisplay = document.getElementById('money-display');
+const backpackDisplay = document.getElementById('backpack-display');
+const moneyPill = document.getElementById('money-pill');
+const questText = document.getElementById('quest-text');
+
+function addMoney(amt) {
+  GAME_STATE.money += amt;
+  updateHUD();
+  audio.playCoin();
+  moneyPill.classList.remove('bounce');
+  void moneyPill.offsetWidth; // trigger reflow
+  moneyPill.classList.add('bounce');
+}
+
+function updateHUD() {
+  moneyDisplay.textContent = GAME_STATE.money.toLocaleString();
+  backpackDisplay.textContent = `${GAME_STATE.backpack.length} / ${GAME_STATE.maxBackpack}`;
+  updateQuestGuidance();
+}
+
+function updateQuestGuidance() {
+  if (!GAME_STATE.unlocked.conveyor1) {
+    if (GAME_STATE.backpack.length === 0 && GAME_STATE.money < 100) {
+      questText.textContent = "步驟 1：前往西側冰洞拾取「凍魚」，搬至「自動切割機」加工";
+    } else if (GAME_STATE.money >= 100) {
+      questText.textContent = "步驟 2：站上［1號輸送帶］付費解鎖格（$100），自動運送凍魚！";
+    } else {
+      questText.textContent = "步驟 1.5：將切好的魚肉搬到「1號發放台」，市民領取後在收銀格領取鈔票！";
+    }
+  } else if (!GAME_STATE.unlocked.conveyor2) {
+    if (GAME_STATE.money >= 150) {
+      questText.textContent = "步驟 3：踩踏［2號輸送帶］（$150），實現魚肉產線 100% 全自動化！";
+    } else {
+      questText.textContent = "步驟 3：搬運魚肉至發放台累積至 $150，準備解鎖［2號輸送帶］";
+    }
+  } else if (!GAME_STATE.unlocked.counter2) {
+    questText.textContent = "步驟 4：解鎖［2號高級發放台］（$250），準備開啟高價雪熊肉收購業務！";
+  } else if (!GAME_STATE.unlocked.mercenary) {
+    questText.textContent = "步驟 5：將切片魚肉放至北側誘餌墊獵殺雪熊，或解鎖［傭兵小屋］（$400）替你打獵！";
+  } else if (!GAME_STATE.unlocked.ballista) {
+    questText.textContent = "步驟 6：解鎖南側［重型連發弩塔］（$800），準備獵殺湖底變異巨獸！";
+  } else {
+    questText.textContent = "極地霸主：將雪熊肉投入南側湖畔誘餌，啟動弩塔狂暴狙殺巨鯊，收穫天價變異肉！";
+  }
+}
+
+// Cheat button
+document.getElementById('btn-cheat').addEventListener('click', (e) => {
+  e.stopPropagation();
+  addMoney(500);
+  spawnFloatingText(player.group.position, "+$500 測試金幣", "money");
+});
+
+// Sound Toggle
+const btnSound = document.getElementById('btn-sound');
+btnSound.addEventListener('click', (e) => {
+  e.stopPropagation();
+  audio.muted = !audio.muted;
+  btnSound.textContent = audio.muted ? '🔇' : '🔊';
+});
+
+/* ==========================================================================
+   THREE.JS SCENE SETUP
+   ========================================================================== */
+const container = document.getElementById('webgl-container');
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0xa5c4d4);
+scene.fog = new THREE.FogExp2(0xa5c4d4, 0.015);
+
+const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 300);
+camera.position.set(24, 32, 24);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+container.appendChild(renderer.domElement);
+
+// Lighting
+const ambientLight = new THREE.AmbientLight(0xdcf0ff, 0.7);
+scene.add(ambientLight);
+
+const hemiLight = new THREE.HemisphereLight(0xffffff, 0x8eb1c7, 0.4);
+scene.add(hemiLight);
+
+const dirLight = new THREE.DirectionalLight(0xfff8ee, 1.2);
+dirLight.position.set(30, 50, 20);
+dirLight.castShadow = true;
+dirLight.shadow.mapSize.width = 2048;
+dirLight.shadow.mapSize.height = 2048;
+dirLight.shadow.camera.near = 10;
+dirLight.shadow.camera.far = 120;
+const d = 35;
+dirLight.shadow.camera.left = -d;
+dirLight.shadow.camera.right = d;
+dirLight.shadow.camera.top = d;
+dirLight.shadow.camera.bottom = -d;
+dirLight.shadow.bias = -0.0005;
+scene.add(dirLight);
+
+// Window Resize
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+/* ==========================================================================
+   PARABOLA TWEEN ANIMATION SYSTEM
+   ========================================================================== */
+const activeTweens = [];
+function addParabolaTween({
+  object,
+  startPos,
+  targetPos,
+  arcHeight = 2.5,
+  duration = 0.45,
+  onProgress = null,
+  onComplete = null
+}) {
+  object.position.copy(startPos);
+  scene.add(object);
+  activeTweens.push({
+    object,
+    startPos: startPos.clone(),
+    targetPos: targetPos.clone(),
+    arcHeight,
+    duration,
+    elapsed: 0,
+    onProgress,
+    onComplete
+  });
+}
+
+function updateTweens(dt) {
+  for (let i = activeTweens.length - 1; i >= 0; i--) {
+    const tw = activeTweens[i];
+    tw.elapsed += dt;
+    const t = Math.min(1, tw.elapsed / tw.duration);
+    
+    // Parabolic interpolation
+    const easeT = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+    tw.object.position.x = THREE.MathUtils.lerp(tw.startPos.x, tw.targetPos.x, t);
+    tw.object.position.z = THREE.MathUtils.lerp(tw.startPos.z, tw.targetPos.z, t);
+    const linearY = THREE.MathUtils.lerp(tw.startPos.y, tw.targetPos.y, t);
+    const parabola = 4 * tw.arcHeight * t * (1 - t);
+    tw.object.position.y = linearY + parabola;
+
+    // Slight rotation & scale squash
+    tw.object.rotation.x += dt * 5;
+    tw.object.rotation.y += dt * 7;
+    const s = 1 + 0.3 * Math.sin(t * Math.PI);
+    tw.object.scale.set(s, s, s);
+
+    if (tw.onProgress) tw.onProgress(t);
+
+    if (t >= 1) {
+      tw.object.scale.set(1, 1, 1);
+      if (tw.onComplete) tw.onComplete();
+      activeTweens.splice(i, 1);
+    }
+  }
+}
+
+/* ==========================================================================
+   LOW-POLY ITEM FACTORIES
+   ========================================================================== */
+const materials = {
+  rawFish: new THREE.MeshLambertMaterial({ color: 0x3a86ff, flatShading: true }),
+  fishTail: new THREE.MeshLambertMaterial({ color: 0x90e0ef, flatShading: true }),
+  slicedFish: new THREE.MeshLambertMaterial({ color: 0xff5400, flatShading: true }),
+  meatWhite: new THREE.MeshLambertMaterial({ color: 0xffffff, flatShading: true }),
+  bearMeat: new THREE.MeshLambertMaterial({ color: 0xc1121f, flatShading: true }),
+  bone: new THREE.MeshLambertMaterial({ color: 0xfdf0d5, flatShading: true }),
+  sharkMeat: new THREE.MeshStandardMaterial({ color: 0x7209b7, emissive: 0x240046, roughness: 0.3, flatShading: true }),
+  cash: new THREE.MeshLambertMaterial({ color: 0x2ec4b6, flatShading: true }),
+  woodPlank: new THREE.MeshLambertMaterial({ color: 0x7f5539, flatShading: true }),
+  woodFence: new THREE.MeshLambertMaterial({ color: 0x582f0e, flatShading: true }),
+  snow: new THREE.MeshLambertMaterial({ color: 0xf4f7f6, flatShading: true }),
+  ice: new THREE.MeshStandardMaterial({ color: 0x48cae4, roughness: 0.1, metalness: 0.1, transparent: true, opacity: 0.85 }),
+  metalDark: new THREE.MeshStandardMaterial({ color: 0x343a40, roughness: 0.5, metalness: 0.6 }),
+  metalBlade: new THREE.MeshStandardMaterial({ color: 0xe9ecef, metalness: 0.9, roughness: 0.2 }),
+  bloodRed: new THREE.MeshLambertMaterial({ color: 0xae2012 })
+};
+
+function createRawFishMesh() {
+  const g = new THREE.Group();
+  // Body
+  const bodyGeo = new THREE.BoxGeometry(0.7, 0.3, 0.4);
+  const body = new THREE.Mesh(bodyGeo, materials.rawFish);
+  body.castShadow = true;
+  g.add(body);
+  // Tail
+  const tailGeo = new THREE.ConeGeometry(0.22, 0.4, 4);
+  const tail = new THREE.Mesh(tailGeo, materials.fishTail);
+  tail.rotation.z = Math.PI / 2;
+  tail.position.x = -0.45;
+  g.add(tail);
+  return g;
+}
+
+function createSlicedFishMesh() {
+  const g = new THREE.Group();
+  const geo = new THREE.BoxGeometry(0.65, 0.25, 0.45);
+  const meat = new THREE.Mesh(geo, materials.slicedFish);
+  meat.castShadow = true;
+  g.add(meat);
+  // Strip lines
+  const stripGeo = new THREE.BoxGeometry(0.67, 0.06, 0.47);
+  const strip = new THREE.Mesh(stripGeo, materials.meatWhite);
+  g.add(strip);
+  return g;
+}
+
+function createBearMeatMesh() {
+  const g = new THREE.Group();
+  const steakGeo = new THREE.BoxGeometry(0.75, 0.4, 0.6);
+  const steak = new THREE.Mesh(steakGeo, materials.bearMeat);
+  steak.castShadow = true;
+  g.add(steak);
+  // Bone in middle
+  const boneGeo = new THREE.CylinderGeometry(0.1, 0.1, 0.8, 6);
+  const bone = new THREE.Mesh(boneGeo, materials.bone);
+  bone.rotation.x = Math.PI / 2;
+  g.add(bone);
+  return g;
+}
+
+function createSharkMeatMesh() {
+  const g = new THREE.Group();
+  const geo = new THREE.DodecahedronGeometry(0.38);
+  const meat = new THREE.Mesh(geo, materials.sharkMeat);
+  meat.castShadow = true;
+  g.add(meat);
+  // Electric sparks ring
+  const ringGeo = new THREE.TorusGeometry(0.42, 0.05, 4, 8);
+  const ringMat = new THREE.MeshBasicMaterial({ color: 0x00f5d4 });
+  const ring = new THREE.Mesh(ringGeo, ringMat);
+  ring.rotation.x = Math.PI / 2;
+  g.add(ring);
+  return g;
+}
+
+function createCashMesh() {
+  const geo = new THREE.BoxGeometry(0.5, 0.08, 0.3);
+  const bill = new THREE.Mesh(geo, materials.cash);
+  bill.castShadow = true;
+  return bill;
+}
+
+function createItemMeshByType(type) {
+  switch (type) {
+    case 'RAW_FISH': return createRawFishMesh();
+    case 'SLICED_FISH': return createSlicedFishMesh();
+    case 'BEAR_MEAT': return createBearMeatMesh();
+    case 'SHARK_MEAT': return createSharkMeatMesh();
+    default: return createRawFishMesh();
+  }
+}
+
+/* ==========================================================================
+   SCENE ENVIRONMENT & CAMPGROUND
+   ========================================================================== */
+// Snow ground
+const groundGeo = new THREE.PlaneGeometry(160, 160, 32, 32);
+const groundMat = new THREE.MeshLambertMaterial({ color: 0xe9f5f9 });
+const ground = new THREE.Mesh(groundGeo, groundMat);
+ground.rotation.x = -Math.PI / 2;
+ground.position.y = -0.05;
+ground.receiveShadow = true;
+scene.add(ground);
+
+// Central Camp Meltdown Wooden Floor
+const woodFloorGroup = new THREE.Group();
+const floorGeo = new THREE.BoxGeometry(26, 0.2, 24);
+const floorMesh = new THREE.Mesh(floorGeo, materials.woodPlank);
+floorMesh.receiveShadow = true;
+woodFloorGroup.add(floorMesh);
+
+// Plank strip visual details
+for (let i = -12; i <= 12; i += 2) {
+  const seam = new THREE.Mesh(new THREE.BoxGeometry(25.8, 0.22, 0.08), new THREE.MeshLambertMaterial({ color: 0x3d2614 }));
+  seam.position.z = i;
+  woodFloorGroup.add(seam);
+}
+woodFloorGroup.position.set(0, 0, 0);
+scene.add(woodFloorGroup);
+
+// Wooden Fences around Central Camp with Gaps at North (Z: -12) and South (Z: +12)
+function createFencePost(x, z) {
+  const post = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.25, 1.6, 6), materials.woodFence);
+  post.position.set(x, 0.8, z);
+  post.castShadow = true;
+  scene.add(post);
+}
+function createFenceRail(x, z, len, isRot = false) {
+  const rail = new THREE.Mesh(new THREE.BoxGeometry(len, 0.16, 0.16), materials.woodFence);
+  rail.position.set(x, 0.9, z);
+  if (isRot) rail.rotation.y = Math.PI / 2;
+  rail.castShadow = true;
+  scene.add(rail);
+}
+
+// West Fence (Full)
+createFenceRail(-13, 0, 24, true);
+for (let z = -12; z <= 12; z += 3) createFencePost(-13, z);
+
+// East Fence (Full)
+createFenceRail(13, 0, 24, true);
+for (let z = -12; z <= 12; z += 3) createFencePost(13, z);
+
+// North Fence (With gap for North Hunting Area: gap from X = -3 to X = 3)
+createFenceRail(-8, -12, 10);
+createFenceRail(8, -12, 10);
+for (let x = -13; x <= -3; x += 2.5) createFencePost(x, -12);
+for (let x = 3; x <= 13; x += 2.5) createFencePost(x, -12);
+
+// South Fence (With gap for South Fishing Lake: gap from X = -3 to X = 3)
+createFenceRail(-8, 12, 10);
+createFenceRail(8, 12, 10);
+for (let x = -13; x <= -3; x += 2.5) createFencePost(x, 12);
+for (let x = 3; x <= 13; x += 2.5) createFencePost(x, 12);
+
+// Low-poly Pine Trees & Rocks in Background
+function createPineTree(x, z, scale = 1) {
+  const tree = new THREE.Group();
+  const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.3 * scale, 0.45 * scale, 1.8 * scale, 6), materials.woodFence);
+  trunk.position.y = 0.9 * scale;
+  trunk.castShadow = true;
+  tree.add(trunk);
+
+  const leavesMat = new THREE.MeshLambertMaterial({ color: 0x1d3557, flatShading: true });
+  const snowMat = new THREE.MeshLambertMaterial({ color: 0xffffff, flatShading: true });
+
+  for (let i = 0; i < 3; i++) {
+    const cone = new THREE.Mesh(new THREE.ConeGeometry((1.8 - i * 0.4) * scale, 1.5 * scale, 6), leavesMat);
+    cone.position.y = (1.8 + i * 1.0) * scale;
+    cone.castShadow = true;
+    tree.add(cone);
+
+    const snowCap = new THREE.Mesh(new THREE.ConeGeometry((1.4 - i * 0.35) * scale, 0.4 * scale, 6), snowMat);
+    snowCap.position.y = (2.4 + i * 1.0) * scale;
+    tree.add(snowCap);
+  }
+  tree.position.set(x, 0, z);
+  scene.add(tree);
+}
+
+// Populate background forest
+const treePositions = [
+  [-22, -18], [-28, -8], [-25, 10], [-20, 24],
+  [22, -16], [28, -6], [26, 12], [24, 22],
+  [-12, -28], [12, -28], [-18, 32], [18, 34]
+];
+treePositions.forEach(([x, z]) => createPineTree(x, z, 0.9 + Math.random() * 0.4));
+
+// Gentle Snow Particles System
+const snowGeo = new THREE.BufferGeometry();
+const snowCount = 400;
+const snowPositions = new Float32Array(snowCount * 3);
+for (let i = 0; i < snowCount; i++) {
+  snowPositions[i * 3] = (Math.random() - 0.5) * 90;
+  snowPositions[i * 3 + 1] = Math.random() * 30;
+  snowPositions[i * 3 + 2] = (Math.random() - 0.5) * 90;
+}
+snowGeo.setAttribute('position', new THREE.BufferAttribute(snowPositions, 3));
+const snowMat = new THREE.PointsMaterial({ color: 0xffffff, size: 0.25, transparent: true, opacity: 0.8 });
+const snowParticles = new THREE.Points(snowGeo, snowMat);
+scene.add(snowParticles);
+
+/* ==========================================================================
+   INTERACTIVE GAME ZONES & WORKSTATIONS
+   ========================================================================== */
+
+// --- 1. WEST SIDE: ICE HOLE & FROZEN FISH PILE ---
+const fishHoleGroup = new THREE.Group();
+fishHoleGroup.position.set(-10, 0, 0);
+
+// Ice rim
+const iceRim = new THREE.Mesh(new THREE.TorusGeometry(2.2, 0.35, 6, 16), materials.snow);
+iceRim.rotation.x = Math.PI / 2;
+iceRim.position.y = 0.2;
+fishHoleGroup.add(iceRim);
+
+// Water surface inside hole
+const iceWater = new THREE.Mesh(new THREE.CircleGeometry(2.0, 16), new THREE.MeshStandardMaterial({
+  color: 0x0077b6,
+  roughness: 0.1,
+  metalness: 0.8
+}));
+iceWater.rotation.x = -Math.PI / 2;
+iceWater.position.y = 0.05;
+fishHoleGroup.add(iceWater);
+
+// Ice blocks decoration
+for (let i = 0; i < 4; i++) {
+  const block = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.7, 0.8), materials.ice);
+  block.position.set(Math.cos(i * 1.5) * 1.7, 0.35, Math.sin(i * 1.5) * 1.7);
+  block.rotation.y = Math.random();
+  fishHoleGroup.add(block);
+}
+scene.add(fishHoleGroup);
+
+// Spawned fish pile on ground
+const rawFishPile = [];
+const MAX_RAW_FISH_PILE = 8;
+const rawFishPileAnchor = new THREE.Vector3(-8, 0.2, 0);
+
+function refreshRawFishPileVisual() {
+  rawFishPile.forEach((mesh, idx) => {
+    const col = idx % 3;
+    const row = Math.floor(idx / 3);
+    mesh.position.set(rawFishPileAnchor.x + col * 0.55, 0.2 + (idx >= 6 ? 0.3 : 0), rawFishPileAnchor.z + row * 0.45);
+  });
+}
+
+function spawnRawFish() {
+  if (rawFishPile.length >= MAX_RAW_FISH_PILE) return;
+  const mesh = createRawFishMesh();
+  mesh.position.copy(fishHoleGroup.position);
+  scene.add(mesh);
+  rawFishPile.push(mesh);
+  refreshRawFishPileVisual();
+}
+setInterval(spawnRawFish, 1200);
+
+// --- 2. CAMP INTERIOR: AUTO CUTTER MACHINE ---
+const cutterGroup = new THREE.Group();
+cutterGroup.position.set(-2, 0, -3);
+
+// Machine base block
+const machineBase = new THREE.Mesh(new THREE.BoxGeometry(2.6, 1.4, 2.2), materials.metalDark);
+machineBase.position.y = 0.7;
+machineBase.castShadow = true;
+cutterGroup.add(machineBase);
+
+// Machine conveyor bed
+const cutterBed = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.2, 1.4), materials.woodFence);
+cutterBed.position.y = 1.4;
+cutterGroup.add(cutterBed);
+
+// Spinning saw blade assembly
+const sawGroup = new THREE.Group();
+sawGroup.position.set(0, 1.7, 0);
+const sawBlade = new THREE.Mesh(new THREE.CylinderGeometry(0.65, 0.65, 0.06, 16), materials.metalBlade);
+sawBlade.rotation.x = Math.PI / 2;
+sawGroup.add(sawBlade);
+// Saw guard
+const sawGuard = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.8, 1.2), materials.bloodRed);
+sawGuard.position.set(0, 0.4, 0);
+sawGroup.add(sawGuard);
+cutterGroup.add(sawGroup);
+
+// In-tray & Out-tray markers
+const cutterInPos = new THREE.Vector3(-3.5, 0.4, -3);
+const cutterOutPos = new THREE.Vector3(-0.5, 0.4, -3);
+
+const inTrayMesh = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.1, 1.2), new THREE.MeshLambertMaterial({ color: 0x3a86ff }));
+inTrayMesh.position.copy(cutterInPos);
+inTrayMesh.position.y = 0.05;
+scene.add(inTrayMesh);
+
+const outTrayMesh = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.1, 1.2), new THREE.MeshLambertMaterial({ color: 0xff5400 }));
+outTrayMesh.position.copy(cutterOutPos);
+outTrayMesh.position.y = 0.05;
+scene.add(outTrayMesh);
+
+scene.add(cutterGroup);
+
+// Cutter buffers
+const cutterInItems = []; // Raw fish queued
+const cutterOutItems = []; // Sliced fish waiting to be picked
+let isCutterProcessing = false;
+
+function processCutter() {
+  if (isCutterProcessing || cutterInItems.length === 0 || cutterOutItems.length >= 8) return;
+  isCutterProcessing = true;
+  audio.playSaw();
+
+  const rawMesh = cutterInItems.shift();
+  // Animate into blade
+  addParabolaTween({
+    object: rawMesh,
+    startPos: rawMesh.position.clone(),
+    targetPos: new THREE.Vector3(-2, 1.5, -3),
+    arcHeight: 0.3,
+    duration: 0.5,
+    onComplete: () => {
+      scene.remove(rawMesh);
+      // Wait saw cut duration (1s)
+      setTimeout(() => {
+        isCutterProcessing = false;
+        // Output sliced fish
+        const sliced = createSlicedFishMesh();
+        const outTarget = new THREE.Vector3(cutterOutPos.x + (cutterOutItems.length % 3) * 0.4, 0.3, cutterOutPos.z + Math.floor(cutterOutItems.length / 3) * 0.35);
+        addParabolaTween({
+          object: sliced,
+          startPos: new THREE.Vector3(-2, 1.5, -3),
+          targetPos: outTarget,
+          arcHeight: 1.0,
+          duration: 0.4,
+          onComplete: () => {
+            cutterOutItems.push(sliced);
+          }
+        });
+        spawnFloatingText(new THREE.Vector3(-2, 2.5, -3), "加工完成! 🍣", "info");
+      }, 700);
+    }
+  });
+}
+setInterval(processCutter, 800);
+
+// --- 3. CITIZEN COUNTER #1 (FISH SERVICE STALL) ---
+const counter1Group = new THREE.Group();
+counter1Group.position.set(4, 0, -4);
+
+// Wooden counter stall
+const stallDesk = new THREE.Mesh(new THREE.BoxGeometry(2.4, 1.3, 1.6), materials.woodFence);
+stallDesk.position.y = 0.65;
+stallDesk.castShadow = true;
+counter1Group.add(stallDesk);
+
+// Awning roof (Red and white low-poly)
+const roof = new THREE.Mesh(new THREE.ConeGeometry(1.8, 1.0, 4), new THREE.MeshLambertMaterial({ color: 0x2a9d8f }));
+roof.position.y = 2.4;
+roof.rotation.y = Math.PI / 4;
+counter1Group.add(roof);
+
+// Signboard
+const sign = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.4, 0.1), new THREE.MeshLambertMaterial({ color: 0xffb703 }));
+sign.position.set(0, 1.8, 0.8);
+counter1Group.add(sign);
+
+scene.add(counter1Group);
+
+// Cash Drop Zone #1
+const cashZone1Pos = new THREE.Vector3(4, 0.1, -1.2);
+const cashZone1Mesh = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 1.2, 0.05, 16), new THREE.MeshLambertMaterial({ color: 0x55a630 }));
+cashZone1Mesh.position.copy(cashZone1Pos);
+scene.add(cashZone1Mesh);
+
+const counter1Stock = []; // Sliced fish waiting for citizens
+const cashBills1 = [];    // Cash piles on the ground
+
+// --- 4. CITIZEN COUNTER #2 [PREMIUM STALL: BEAR & SHARK MEAT] ---
+const counter2Group = new THREE.Group();
+counter2Group.position.set(4, 0, 4);
+counter2Group.visible = false; // Hidden until unlocked
+
+const stallDesk2 = new THREE.Mesh(new THREE.BoxGeometry(2.4, 1.3, 1.6), new THREE.MeshLambertMaterial({ color: 0x3d0066 }));
+stallDesk2.position.y = 0.65;
+stallDesk2.castShadow = true;
+counter2Group.add(stallDesk2);
+
+const roof2 = new THREE.Mesh(new THREE.ConeGeometry(1.8, 1.0, 4), new THREE.MeshLambertMaterial({ color: 0xe63946 }));
+roof2.position.y = 2.4;
+roof2.rotation.y = Math.PI / 4;
+counter2Group.add(roof2);
+
+scene.add(counter2Group);
+
+const cashZone2Pos = new THREE.Vector3(4, 0.1, 7);
+const cashZone2Mesh = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 1.2, 0.05, 16), new THREE.MeshLambertMaterial({ color: 0xffaa00 }));
+cashZone2Mesh.position.copy(cashZone2Pos);
+cashZone2Mesh.visible = false;
+scene.add(cashZone2Mesh);
+
+const counter2Stock = []; // High value meats
+const cashBills2 = [];
+
+/* ==========================================================================
+   CITIZEN NPC QUEUE SYSTEM (EAST SIDE)
+   ========================================================================== */
+class CitizenNPC {
+  constructor(stallIdx, queueIndex) {
+    this.stallIdx = stallIdx; // 1 or 2
+    this.queueIndex = queueIndex;
+    this.group = new THREE.Group();
+
+    // Cute Low-poly citizen body
+    const parkaColor = [0x457b9d, 0xe76f51, 0x2a9d8f, 0x8338ec][Math.floor(Math.random() * 4)];
+    const body = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.45, 1.0, 8), new THREE.MeshLambertMaterial({ color: parkaColor }));
+    body.position.y = 0.6;
+    body.castShadow = true;
+    this.group.add(body);
+
+    // Head with fur hood
+    const hood = new THREE.Mesh(new THREE.SphereGeometry(0.38, 8, 8), new THREE.MeshLambertMaterial({ color: 0xfdf0d5 }));
+    hood.position.y = 1.3;
+    this.group.add(hood);
+
+    // Face
+    const face = new THREE.Mesh(new THREE.SphereGeometry(0.25, 8, 8), new THREE.MeshLambertMaterial({ color: 0xffcad4 }));
+    face.position.set(0, 1.3, 0.2);
+    this.group.add(face);
+
+    this.state = 'WALKING_TO_QUEUE';
+    this.speed = 4.0;
+    this.eatTimer = 0;
+    this.targetPos = new THREE.Vector3();
+
+    // Initial position outside East fence
+    this.group.position.set(18 + queueIndex * 2, 0, stallIdx === 1 ? -4 : 4);
+    scene.add(this.group);
+  }
+
+  getTargetQueuePos() {
+    const baseX = 6.2;
+    const z = this.stallIdx === 1 ? -4 : 4;
+    return new THREE.Vector3(baseX + this.queueIndex * 1.8, 0, z);
+  }
+
+  update(dt) {
+    if (this.state === 'WALKING_TO_QUEUE') {
+      const target = this.getTargetQueuePos();
+      const dist = this.group.position.distanceTo(target);
+      if (dist > 0.1) {
+        const dir = target.clone().sub(this.group.position).normalize();
+        this.group.position.addScaledVector(dir, this.speed * dt);
+        this.group.rotation.y = Math.atan2(dir.x, dir.z);
+        this.group.position.y = Math.abs(Math.sin(Date.now() * 0.01)) * 0.15;
+      } else {
+        this.group.position.copy(target);
+        this.group.position.y = 0;
+        this.group.rotation.y = -Math.PI / 2; // Facing the counter
+        this.state = 'WAITING';
+      }
+    } else if (this.state === 'WAITING') {
+      // If at front of queue (queueIndex === 0), check stock
+      if (this.queueIndex === 0) {
+        if (this.stallIdx === 1 && counter1Stock.length > 0) {
+          const item = counter1Stock.shift();
+          this.state = 'EATING';
+          this.eatTimer = 0.8;
+          // Fly food to citizen
+          addParabolaTween({
+            object: item,
+            startPos: item.position.clone(),
+            targetPos: this.group.position.clone().add(new THREE.Vector3(0, 1.2, 0)),
+            arcHeight: 1.0,
+            duration: 0.35,
+            onComplete: () => {
+              scene.remove(item);
+              spawnFloatingText(this.group.position, "❤️ 好吃!", "info");
+              // Drop $20 bill at cash zone
+              spawnCashBill(cashZone1Pos, cashBills1, 20);
+            }
+          });
+        } else if (this.stallIdx === 2 && counter2Stock.length > 0) {
+          const item = counter2Stock.shift();
+          this.state = 'EATING';
+          this.eatTimer = 0.8;
+          const isShark = item.userData && item.userData.type === 'SHARK_MEAT';
+          const reward = isShark ? 150 : 60;
+          addParabolaTween({
+            object: item,
+            startPos: item.position.clone(),
+            targetPos: this.group.position.clone().add(new THREE.Vector3(0, 1.2, 0)),
+            arcHeight: 1.0,
+            duration: 0.35,
+            onComplete: () => {
+              scene.remove(item);
+              spawnFloatingText(this.group.position, isShark ? "🌟 極品巨鯊肉!! +$150" : "🍖 雪熊大餐! +$60", "info");
+              spawnCashBill(cashZone2Pos, cashBills2, reward);
+            }
+          });
+        }
+      }
+    } else if (this.state === 'EATING') {
+      this.eatTimer -= dt;
+      this.group.position.y = Math.sin(Date.now() * 0.02) * 0.2;
+      if (this.eatTimer <= 0) {
+        this.state = 'LEAVING';
+        this.targetPos.set(25, 0, this.group.position.z + (Math.random() - 0.5) * 4);
+        onCitizenServed(this.stallIdx);
+      }
+    } else if (this.state === 'LEAVING') {
+      const dir = this.targetPos.clone().sub(this.group.position).normalize();
+      this.group.position.addScaledVector(dir, this.speed * dt);
+      this.group.rotation.y = Math.atan2(dir.x, dir.z);
+      this.group.position.y = Math.abs(Math.sin(Date.now() * 0.012)) * 0.15;
+      if (this.group.position.distanceTo(this.targetPos) < 1.0) {
+        scene.remove(this.group);
+        return true; // Destroyed
+      }
+    }
+    return false;
+  }
+}
+
+const citizensLine1 = [];
+const citizensLine2 = [];
+
+function initCitizensLine(stallIdx, arr, max = 4) {
+  for (let i = 0; i < max; i++) {
+    arr.push(new CitizenNPC(stallIdx, i));
+  }
+}
+initCitizensLine(1, citizensLine1, 4);
+
+function onCitizenServed(stallIdx) {
+  const line = stallIdx === 1 ? citizensLine1 : citizensLine2;
+  const served = line.shift();
+  // Shift remaining queue index forward
+  line.forEach((npc, idx) => {
+    npc.queueIndex = idx;
+    npc.state = 'WALKING_TO_QUEUE';
+  });
+  // Spawn new citizen at back
+  setTimeout(() => {
+    line.push(new CitizenNPC(stallIdx, line.length));
+  }, 1200);
+}
+
+function spawnCashBill(zonePos, cashList, val = 20) {
+  const bill = createCashMesh();
+  bill.userData = { value: val };
+  const offset = new THREE.Vector3((Math.random() - 0.5) * 1.4, (cashList.length % 8) * 0.09, (Math.random() - 0.5) * 1.4);
+  const target = zonePos.clone().add(offset);
+
+  addParabolaTween({
+    object: bill,
+    startPos: zonePos.clone().add(new THREE.Vector3(0, 1.5, 0)),
+    targetPos: target,
+    arcHeight: 0.8,
+    duration: 0.35,
+    onComplete: () => {
+      cashList.push(bill);
+    }
+  });
+}
+
+/* ==========================================================================
+   CONVEYOR BELTS (ANIMATED 100% AUTOMATION)
+   ========================================================================== */
+// Conveyor 1: Fish Hole (-10, 0) -> Cutter In-tray (-3.5, -3)
+const belt1Group = new THREE.Group();
+belt1Group.visible = false;
+const belt1Geo = new THREE.BoxGeometry(7.0, 0.2, 0.8);
+const belt1Mat = new THREE.MeshStandardMaterial({ color: 0x1d2d44, roughness: 0.6 });
+const belt1Mesh = new THREE.Mesh(belt1Geo, belt1Mat);
+belt1Group.add(belt1Mesh);
+// Rollers
+for (let i = -3; i <= 3; i += 1.2) {
+  const roller = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.85, 8), materials.metalBlade);
+  roller.rotation.x = Math.PI / 2;
+  roller.position.x = i;
+  roller.position.y = 0.1;
+  belt1Group.add(roller);
+}
+// Position and angle
+belt1Group.position.set(-6.8, 0.15, -1.5);
+belt1Group.rotation.y = Math.atan2(-3, 6.5);
+scene.add(belt1Group);
+
+// Conveyor 2: Cutter Out-tray (-0.5, -3) -> Counter 1 (4, -4)
+const belt2Group = new THREE.Group();
+belt2Group.visible = false;
+const belt2Geo = new THREE.BoxGeometry(5.0, 0.2, 0.8);
+const belt2Mesh = new THREE.Mesh(belt2Geo, belt1Mat);
+belt2Group.add(belt2Mesh);
+for (let i = -2; i <= 2; i += 1.0) {
+  const roller = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.85, 8), materials.metalBlade);
+  roller.rotation.x = Math.PI / 2;
+  roller.position.x = i;
+  roller.position.y = 0.1;
+  belt2Group.add(roller);
+}
+belt2Group.position.set(1.8, 0.15, -3.5);
+belt2Group.rotation.y = Math.atan2(-1, 4.5);
+scene.add(belt2Group);
+
+// Automated transport timers
+setInterval(() => {
+  if (GAME_STATE.unlocked.conveyor1 && rawFishPile.length > 0 && cutterInItems.length < 5) {
+    const fish = rawFishPile.shift();
+    refreshRawFishPileVisual();
+    addParabolaTween({
+      object: fish,
+      startPos: fish.position.clone(),
+      targetPos: cutterInPos.clone().add(new THREE.Vector3(0, 0.2 * cutterInItems.length, 0)),
+      arcHeight: 1.2,
+      duration: 0.6,
+      onComplete: () => {
+        cutterInItems.push(fish);
+      }
+    });
+  }
+}, 1500);
+
+setInterval(() => {
+  if (GAME_STATE.unlocked.conveyor2 && cutterOutItems.length > 0 && counter1Stock.length < 8) {
+    const sliced = cutterOutItems.shift();
+    const stockPos = new THREE.Vector3(3.4, 1.4, -4).add(new THREE.Vector3(0, 0.2 * counter1Stock.length, 0));
+    addParabolaTween({
+      object: sliced,
+      startPos: sliced.position.clone(),
+      targetPos: stockPos,
+      arcHeight: 1.5,
+      duration: 0.7,
+      onComplete: () => {
+        counter1Stock.push(sliced);
+      }
+    });
+  }
+}, 1200);
+
+/* ==========================================================================
+   PAY-TO-UNLOCK PADS SYSTEM (CanvasTexture Progress & Parabola Cash Flying)
+   ========================================================================== */
+class UnlockPad {
+  constructor({ id, name, cost, position, onUnlock }) {
+    this.id = id;
+    this.name = name;
+    this.cost = cost;
+    this.position = position;
+    this.onUnlock = onUnlock;
+    this.paid = 0;
+    this.isUnlocked = false;
+
+    this.group = new THREE.Group();
+    this.group.position.copy(position);
+
+    // Glowing pad cylinder base
+    const padBaseGeo = new THREE.CylinderGeometry(1.5, 1.5, 0.15, 32);
+    this.padBaseMat = new THREE.MeshStandardMaterial({
+      color: 0x0077b6,
+      roughness: 0.3,
+      metalness: 0.2
+    });
+    this.padBase = new THREE.Mesh(padBaseGeo, this.padBaseMat);
+    this.padBase.position.y = 0.08;
+    this.group.add(this.padBase);
+
+    // Border ring
+    const ringGeo = new THREE.TorusGeometry(1.52, 0.08, 8, 32);
+    const ringMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+    const ring = new THREE.Mesh(ringGeo, ringMat);
+    ring.rotation.x = Math.PI / 2;
+    ring.position.y = 0.16;
+    this.group.add(ring);
+
+    // Dynamic Canvas Texture for text and progress
+    this.canvas = document.createElement('canvas');
+    this.canvas.width = 512;
+    this.canvas.height = 512;
+    this.ctx = this.canvas.getContext('2d');
+    this.texture = new THREE.CanvasTexture(this.canvas);
+
+    const signGeo = new THREE.PlaneGeometry(2.4, 2.4);
+    const signMat = new THREE.MeshBasicMaterial({
+      map: this.texture,
+      transparent: true
+    });
+    this.signMesh = new THREE.Mesh(signGeo, signMat);
+    this.signMesh.rotation.x = -Math.PI / 2;
+    this.signMesh.position.y = 0.18;
+    this.group.add(this.signMesh);
+
+    scene.add(this.group);
+    this.updateCanvas();
+  }
+
+  updateCanvas() {
+    const ctx = this.ctx;
+    ctx.clearRect(0, 0, 512, 512);
+
+    // Dark circular background for high contrast & readability
+    ctx.fillStyle = 'rgba(10, 22, 38, 0.9)';
+    ctx.beginPath();
+    ctx.arc(256, 256, 235, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Circle progress track
+    const pct = this.paid / this.cost;
+    ctx.lineWidth = 28;
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.25)';
+    ctx.beginPath();
+    ctx.arc(256, 256, 205, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // Progress fill (Vibrant Neon Cyan/Green)
+    ctx.strokeStyle = '#00f5d4';
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.arc(256, 256, 205, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * pct);
+    ctx.stroke();
+
+    // Text: Title
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 44px -apple-system, sans-serif';
+    ctx.shadowColor = 'rgba(0,0,0,0.8)';
+    ctx.shadowBlur = 8;
+    ctx.fillText(this.name, 256, 200);
+
+    // Text: Remaining cost
+    const remaining = Math.max(0, this.cost - this.paid);
+    ctx.fillStyle = '#ffd166';
+    ctx.font = 'bold 64px -apple-system, sans-serif';
+    ctx.fillText(`$${remaining}`, 256, 310);
+
+    ctx.shadowBlur = 0;
+    this.texture.needsUpdate = true;
+  }
+
+  tryPay(playerMoney) {
+    if (this.isUnlocked || playerMoney <= 0) return 0;
+    const remaining = this.cost - this.paid;
+    const payStep = Math.min(playerMoney, Math.min(5, remaining));
+    this.paid += payStep;
+    this.updateCanvas();
+    audio.playPay();
+
+    // Spawn cash flying from player to pad
+    const bill = createCashMesh();
+    addParabolaTween({
+      object: bill,
+      startPos: player.group.position.clone().add(new THREE.Vector3(0, 1.2, 0)),
+      targetPos: this.group.position.clone().add(new THREE.Vector3((Math.random()-0.5)*0.8, 0.2, (Math.random()-0.5)*0.8)),
+      arcHeight: 1.8,
+      duration: 0.35,
+      onComplete: () => {
+        scene.remove(bill);
+      }
+    });
+
+    if (this.paid >= this.cost) {
+      this.completeUnlock();
+    }
+    return payStep;
+  }
+
+  completeUnlock() {
+    this.isUnlocked = true;
+    audio.playUnlock();
+    spawnFloatingText(this.group.position, `解鎖成功! ${this.name}`, "info");
+
+    // Pop scale animation
+    let t = 0;
+    const baseGroup = this.group;
+    const interval = setInterval(() => {
+      t += 0.1;
+      const s = 1 - t;
+      baseGroup.scale.set(s, s, s);
+      if (t >= 1) {
+        clearInterval(interval);
+        scene.remove(baseGroup);
+      }
+    }, 30);
+
+    this.onUnlock();
+  }
+}
+
+const unlockPads = [];
+
+// Pad 1: 1號輸送帶 ($100)
+unlockPads.push(new UnlockPad({
+  id: 'conveyor1',
+  name: '1號輸送帶',
+  cost: GAME_STATE.unlockCosts.conveyor1,
+  position: new THREE.Vector3(-6, 0, -2.5),
+  onUnlock: () => {
+    GAME_STATE.unlocked.conveyor1 = true;
+    belt1Group.visible = true;
+    belt1Group.scale.set(0.1, 0.1, 0.1);
+    let s = 0.1;
+    const anim = setInterval(() => {
+      s += 0.15;
+      belt1Group.scale.set(s, s, s);
+      if (s >= 1) { belt1Group.scale.set(1, 1, 1); clearInterval(anim); }
+    }, 20);
+    updateHUD();
+  }
+}));
+
+// Pad 2: 2號輸送帶 ($150)
+unlockPads.push(new UnlockPad({
+  id: 'conveyor2',
+  name: '2號輸送帶',
+  cost: GAME_STATE.unlockCosts.conveyor2,
+  position: new THREE.Vector3(1.5, 0, -1.8),
+  onUnlock: () => {
+    GAME_STATE.unlocked.conveyor2 = true;
+    belt2Group.visible = true;
+    updateHUD();
+  }
+}));
+
+// Pad 3: 2號高級發放台 ($250)
+unlockPads.push(new UnlockPad({
+  id: 'counter2',
+  name: '2號發放台',
+  cost: GAME_STATE.unlockCosts.counter2,
+  position: new THREE.Vector3(1.5, 0, 3.5),
+  onUnlock: () => {
+    GAME_STATE.unlocked.counter2 = true;
+    counter2Group.visible = true;
+    cashZone2Mesh.visible = true;
+    initCitizensLine(2, citizensLine2, 3);
+    updateHUD();
+  }
+}));
+
+// Pad 4: 傭兵小屋 ($400)
+unlockPads.push(new UnlockPad({
+  id: 'mercenary',
+  name: '傭兵小屋',
+  cost: GAME_STATE.unlockCosts.mercenary,
+  position: new THREE.Vector3(-8, 0, -12),
+  onUnlock: () => {
+    GAME_STATE.unlocked.mercenary = true;
+    spawnMercenaryCabin();
+    initMercenaries();
+    updateHUD();
+  }
+}));
+
+// Pad 5: 重型連發弩塔 ($800)
+unlockPads.push(new UnlockPad({
+  id: 'ballista',
+  name: '重型連發弩塔',
+  cost: GAME_STATE.unlockCosts.ballista,
+  position: new THREE.Vector3(-5, 0, 15),
+  onUnlock: () => {
+    GAME_STATE.unlocked.ballista = true;
+    ballistaTower.group.visible = true;
+    updateHUD();
+  }
+}));
+
+/* ==========================================================================
+   HUNTING ZONE A (NORTH): SNOW BEAR & BAIT SYSTEM
+   ========================================================================== */
+// Bait Pad A for Sliced Fish (X: 0, Z: -15)
+const baitPadAPos = new THREE.Vector3(0, 0.08, -15);
+const baitPadAMesh = new THREE.Mesh(new THREE.CylinderGeometry(1.6, 1.6, 0.1, 16), new THREE.MeshLambertMaterial({ color: 0xe63946 }));
+baitPadAMesh.position.copy(baitPadAPos);
+scene.add(baitPadAMesh);
+
+// Bait Pad Signboard
+const baitTextA = document.createElement('canvas');
+baitTextA.width = 256; baitTextA.height = 128;
+const bctx = baitTextA.getContext('2d');
+bctx.fillStyle = '#ffffff'; bctx.font = 'bold 32px sans-serif'; bctx.textAlign = 'center';
+bctx.fillText('獵熊誘餌墊', 128, 50);
+bctx.fillStyle = '#ffd166'; bctx.font = '24px sans-serif';
+bctx.fillText('(投入切片魚肉)', 128, 90);
+const baitSignMesh = new THREE.Mesh(new THREE.PlaneGeometry(1.8, 0.9), new THREE.MeshBasicMaterial({
+  map: new THREE.CanvasTexture(baitTextA),
+  transparent: true
+}));
+baitSignMesh.rotation.x = -Math.PI / 2;
+baitSignMesh.position.set(0, 0.16, -15);
+scene.add(baitSignMesh);
+
+// Bear Cave (Z: -32)
+const caveGroup = new THREE.Group();
+caveGroup.position.set(0, 0, -32);
+const caveMound = new THREE.Mesh(new THREE.DodecahedronGeometry(5.0), new THREE.MeshLambertMaterial({ color: 0x6c757d, flatShading: true }));
+caveMound.position.y = 2.5;
+caveGroup.add(caveMound);
+const caveEntrance = new THREE.Mesh(new THREE.CylinderGeometry(2.5, 2.8, 3.5, 8), new THREE.MeshBasicMaterial({ color: 0x050505 }));
+caveEntrance.rotation.x = Math.PI / 2;
+caveEntrance.position.set(0, 2, 3);
+caveGroup.add(caveEntrance);
+scene.add(caveGroup);
+
+// Low-Poly Giant Snow Bear Class
+class SnowBear {
+  constructor() {
+    this.group = new THREE.Group();
+    this.maxHp = 100;
+    this.hp = 100;
+    this.speed = 3.2;
+    this.state = 'DEAD'; // 'IN_CAVE', 'WALKING_TO_BAIT', 'EATING', 'FIGHTING', 'DEAD'
+    this.respawnCooldown = 0;
+    this.attackCooldown = 0;
+
+    // Body (Massive white boxy geometries)
+    const bodyGeo = new THREE.BoxGeometry(2.2, 1.8, 3.2);
+    const furMat = new THREE.MeshLambertMaterial({ color: 0xf8f9fa, flatShading: true });
+    this.torso = new THREE.Mesh(bodyGeo, furMat);
+    this.torso.position.y = 1.6;
+    this.torso.castShadow = true;
+    this.group.add(this.torso);
+
+    // Bear Head
+    const headGeo = new THREE.BoxGeometry(1.4, 1.3, 1.6);
+    this.head = new THREE.Mesh(headGeo, furMat);
+    this.head.position.set(0, 2.2, -1.8);
+    this.head.castShadow = true;
+    this.group.add(this.head);
+
+    // Snout & Nose
+    const snout = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.6, 0.8), new THREE.MeshLambertMaterial({ color: 0xdee2e6 }));
+    snout.position.set(0, 1.9, -2.6);
+    this.group.add(snout);
+
+    const nose = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.25, 0.2), new THREE.MeshLambertMaterial({ color: 0x111111 }));
+    nose.position.set(0, 2.1, -3.05);
+    this.group.add(nose);
+
+    // Ears
+    for (let i = -1; i <= 1; i += 2) {
+      const ear = new THREE.Mesh(new THREE.SphereGeometry(0.3, 6, 6), furMat);
+      ear.position.set(i * 0.6, 2.9, -1.8);
+      this.group.add(ear);
+    }
+
+    // Legs
+    this.legs = [];
+    const legGeo = new THREE.BoxGeometry(0.6, 1.3, 0.6);
+    const legOffsets = [[-0.8, 1.1], [0.8, 1.1], [-0.8, -1.1], [0.8, -1.1]];
+    legOffsets.forEach(([lx, lz]) => {
+      const leg = new THREE.Mesh(legGeo, furMat);
+      leg.position.set(lx, 0.65, lz);
+      leg.castShadow = true;
+      this.group.add(leg);
+      this.legs.push(leg);
+    });
+
+    // 3D Health Bar Billboard
+    this.hpBarBg = new THREE.Mesh(new THREE.PlaneGeometry(2.0, 0.25), new THREE.MeshBasicMaterial({ color: 0x333333 }));
+    this.hpBarFill = new THREE.Mesh(new THREE.PlaneGeometry(1.96, 0.2), new THREE.MeshBasicMaterial({ color: 0xe63946 }));
+    this.hpBarBg.position.y = 3.6;
+    this.hpBarFill.position.set(0, 3.6, 0.01);
+    this.group.add(this.hpBarBg);
+    this.group.add(this.hpBarFill);
+
+    this.group.position.set(0, 0, -30);
+    this.group.visible = false;
+    scene.add(this.group);
+  }
+
+  summon() {
+    this.hp = this.maxHp;
+    this.state = 'WALKING_TO_BAIT';
+    this.group.position.set(0, 0, -29);
+    this.group.visible = true;
+    spawnFloatingText(new THREE.Vector3(0, 3, -25), "⚠️ 暴風雪熊被引誘出來了!!", "dmg");
+  }
+
+  takeDamage(amt, fromPos) {
+    if (this.state === 'DEAD') return;
+    this.hp -= amt;
+    audio.playHit();
+    spawnFloatingText(this.group.position.clone().add(new THREE.Vector3(0, 2.5, 0)), `-${amt}`, "dmg");
+
+    // Flash red
+    this.torso.material.color.setHex(0xff6b6b);
+    setTimeout(() => this.torso.material.color.setHex(0xf8f9fa), 120);
+
+    if (this.hp <= 0) {
+      this.die();
+    }
+  }
+
+  die() {
+    this.state = 'DEAD';
+    this.group.visible = false;
+    this.respawnCooldown = 5.0; // 5s respawn ready
+    spawnFloatingText(this.group.position.clone().add(new THREE.Vector3(0, 2.5, 0)), "💥 擊敗雪熊! 爆出極品雪熊肉!", "info");
+
+    // Burst 5 Bear Meat items with physics bounce
+    for (let i = 0; i < 5; i++) {
+      const meat = createBearMeatMesh();
+      meat.userData = { type: 'BEAR_MEAT' };
+      const angle = (i / 5) * Math.PI * 2;
+      const targetPos = this.group.position.clone().add(new THREE.Vector3(Math.cos(angle) * (2 + Math.random()), 0.25, Math.sin(angle) * (2 + Math.random())));
+      addParabolaTween({
+        object: meat,
+        startPos: this.group.position.clone().add(new THREE.Vector3(0, 1.5, 0)),
+        targetPos: targetPos,
+        arcHeight: 2.5,
+        duration: 0.5,
+        onComplete: () => {
+          droppedBearMeats.push(meat);
+        }
+      });
+    }
+  }
+
+  update(dt) {
+    if (this.state === 'DEAD') {
+      if (this.respawnCooldown > 0) {
+        this.respawnCooldown -= dt;
+      }
+      return;
+    }
+
+    // Health bar update and face camera
+    const hpPct = Math.max(0, this.hp / this.maxHp);
+    this.hpBarFill.scale.x = hpPct;
+    this.hpBarBg.lookAt(camera.position);
+    this.hpBarFill.lookAt(camera.position);
+
+    // Walk animation (legs swing)
+    const t = Date.now() * 0.008;
+    this.legs[0].rotation.x = Math.sin(t) * 0.5;
+    this.legs[1].rotation.x = -Math.sin(t) * 0.5;
+    this.legs[2].rotation.x = -Math.sin(t) * 0.5;
+    this.legs[3].rotation.x = Math.sin(t) * 0.5;
+
+    if (this.state === 'WALKING_TO_BAIT') {
+      const dir = baitPadAPos.clone().sub(this.group.position).normalize();
+      this.group.position.addScaledVector(dir, this.speed * dt);
+      this.group.rotation.y = Math.atan2(dir.x, dir.z);
+
+      if (this.group.position.distanceTo(baitPadAPos) < 1.5) {
+        this.state = 'EATING';
+        setTimeout(() => {
+          if (this.state === 'EATING') {
+            this.state = 'FIGHTING';
+            spawnFloatingText(this.group.position.clone().add(new THREE.Vector3(0, 3, 0)), "吼!! 進入戰鬥狀態!", "dmg");
+          }
+        }, 1200);
+      }
+    } else if (this.state === 'FIGHTING') {
+      // Look at player or nearest mercenary
+      const distToPlayer = this.group.position.distanceTo(player.group.position);
+      if (distToPlayer < 12) {
+        const dir = player.group.position.clone().sub(this.group.position).normalize();
+        this.group.position.addScaledVector(dir, this.speed * 0.5 * dt);
+        this.group.rotation.y = Math.atan2(dir.x, dir.z);
+
+        // Attack player if close
+        if (distToPlayer < 3.0) {
+          this.attackCooldown += dt;
+          if (this.attackCooldown >= 1.5) {
+            this.attackCooldown = 0;
+            player.takeDamage(20);
+          }
+        }
+      }
+    }
+  }
+}
+
+const snowBear = new SnowBear();
+const droppedBearMeats = [];
+let baitPlacedOnPadA = false;
+
+/* ==========================================================================
+   MERCENARY CABIN & AI MERCENARIES [UNLOCKABLE #4]
+   ========================================================================== */
+function spawnMercenaryCabin() {
+  const cabin = new THREE.Group();
+  cabin.position.set(-8, 0, -14);
+  const house = new THREE.Mesh(new THREE.BoxGeometry(4.0, 2.5, 3.5), new THREE.MeshLambertMaterial({ color: 0x4a3525, flatShading: true }));
+  house.position.y = 1.25;
+  cabin.add(house);
+  const roof = new THREE.Mesh(new THREE.ConeGeometry(3.4, 1.8, 4), new THREE.MeshLambertMaterial({ color: 0x9e2a2b, flatShading: true }));
+  roof.position.y = 3.0;
+  roof.rotation.y = Math.PI / 4;
+  cabin.add(roof);
+  scene.add(cabin);
+}
+
+class AIMercenary {
+  constructor(offset) {
+    this.group = new THREE.Group();
+    this.offset = offset;
+    this.speed = 4.2;
+    this.shootTimer = 0;
+    this.carrying = null;
+
+    // Body
+    const body = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.45, 1.1, 8), new THREE.MeshLambertMaterial({ color: 0x2b2d42 }));
+    body.position.y = 0.6;
+    this.group.add(body);
+
+    // Rifle
+    this.rifle = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.15, 1.1), materials.metalDark);
+    this.rifle.position.set(0.35, 0.8, 0.3);
+    this.group.add(this.rifle);
+
+    this.group.position.set(-8 + offset.x, 0, -13 + offset.z);
+    scene.add(this.group);
+  }
+
+  update(dt) {
+    // 1. If bear is alive, mercenaries move to combat range and fire rifles
+    if (snowBear.state === 'FIGHTING' || snowBear.state === 'WALKING_TO_BAIT') {
+      const bearPos = snowBear.group.position;
+      const dist = this.group.position.distanceTo(bearPos);
+      if (dist > 7) {
+        const dir = bearPos.clone().sub(this.group.position).normalize();
+        this.group.position.addScaledVector(dir, this.speed * dt);
+        this.group.rotation.y = Math.atan2(dir.x, dir.z);
+      } else {
+        this.group.lookAt(bearPos);
+        // Shoot rifle
+        this.shootTimer += dt;
+        if (this.shootTimer >= 0.7) {
+          this.shootTimer = 0;
+          audio.playShoot();
+          snowBear.takeDamage(15, this.group.position);
+          // Tracer bullet visual line
+          const tracerGeo = new THREE.BufferGeometry().setFromPoints([
+            this.group.position.clone().add(new THREE.Vector3(0, 1.0, 0)),
+            bearPos.clone().add(new THREE.Vector3(0, 1.5, 0))
+          ]);
+          const tracer = new THREE.Line(tracerGeo, new THREE.LineBasicMaterial({ color: 0xffd166 }));
+          scene.add(tracer);
+          setTimeout(() => scene.remove(tracer), 60);
+        }
+      }
+      return;
+    }
+
+    // 2. If dropped bear meat exists, mercenary gathers it and brings to Counter 2
+    if (!this.carrying && droppedBearMeats.length > 0) {
+      const targetMeat = droppedBearMeats[0];
+      const dist = this.group.position.distanceTo(targetMeat.position);
+      if (dist > 1.0) {
+        const dir = targetMeat.position.clone().sub(this.group.position).normalize();
+        this.group.position.addScaledVector(dir, this.speed * dt);
+        this.group.rotation.y = Math.atan2(dir.x, dir.z);
+      } else {
+        // Pick it up
+        droppedBearMeats.shift();
+        this.carrying = targetMeat;
+        targetMeat.position.set(0, 1.3, -0.4);
+        this.group.add(targetMeat);
+      }
+      return;
+    }
+
+    if (this.carrying) {
+      const deliverPos = new THREE.Vector3(4, 0, 4); // Counter 2
+      const dist = this.group.position.distanceTo(deliverPos);
+      if (dist > 1.5) {
+        const dir = deliverPos.clone().sub(this.group.position).normalize();
+        this.group.position.addScaledVector(dir, this.speed * dt);
+        this.group.rotation.y = Math.atan2(dir.x, dir.z);
+      } else {
+        // Deposit
+        this.group.remove(this.carrying);
+        counter2Stock.push(this.carrying);
+        this.carrying.position.set(3.4, 1.4 + 0.2 * counter2Stock.length, 4);
+        scene.add(this.carrying);
+        this.carrying = null;
+      }
+      return;
+    }
+
+    // 3. Auto Bait: If bait pad is empty, snowBear is ready, and cutter has sliced fish, grab and bait!
+    if (!baitPlacedOnPadA && snowBear.state === 'DEAD' && snowBear.respawnCooldown <= 0 && cutterOutItems.length > 0) {
+      const distToCutter = this.group.position.distanceTo(cutterOutPos);
+      if (distToCutter > 1.2) {
+        const dir = cutterOutPos.clone().sub(this.group.position).normalize();
+        this.group.position.addScaledVector(dir, this.speed * dt);
+        this.group.rotation.y = Math.atan2(dir.x, dir.z);
+      } else {
+        const fish = cutterOutItems.shift();
+        scene.remove(fish);
+        baitPlacedOnPadA = true;
+        snowBear.summon();
+        spawnFloatingText(baitPadAPos, "🥩 傭兵投放切片魚肉誘餌!", "info");
+      }
+    }
+  }
+}
+
+const mercenaries = [];
+function initMercenaries() {
+  mercenaries.push(new AIMercenary(new THREE.Vector3(-1.5, 0, 0)));
+  mercenaries.push(new AIMercenary(new THREE.Vector3(1.5, 0, 0)));
+}
+
+/* ==========================================================================
+   HUNTING ZONE B (SOUTH): FROZEN LAKE, GIANT SHARK & BALLISTA TOWER
+   ========================================================================== */
+// Lake with deep translucent ice/water
+const lakeMesh = new THREE.Mesh(new THREE.CylinderGeometry(14, 14, 0.4, 32), new THREE.MeshStandardMaterial({
+  color: 0x03045e,
+  roughness: 0.1,
+  metalness: 0.9,
+  transparent: true,
+  opacity: 0.9
+}));
+lakeMesh.position.set(0, -0.15, 28);
+scene.add(lakeMesh);
+
+// Bait Pad B for Bear Meat (X: 0, Z: 15)
+const baitPadBPos = new THREE.Vector3(0, 0.08, 15);
+const baitPadBMesh = new THREE.Mesh(new THREE.CylinderGeometry(1.6, 1.6, 0.1, 16), new THREE.MeshLambertMaterial({ color: 0x7209b7 }));
+baitPadBMesh.position.copy(baitPadBPos);
+scene.add(baitPadBMesh);
+
+const baitTextB = document.createElement('canvas');
+baitTextB.width = 256; baitTextB.height = 128;
+const bctx2 = baitTextB.getContext('2d');
+bctx2.fillStyle = '#ffffff'; bctx2.font = 'bold 30px sans-serif'; bctx2.textAlign = 'center';
+bctx2.fillText('深湖巨獸誘餌墊', 128, 50);
+bctx2.fillStyle = '#ffd166'; bctx2.font = '24px sans-serif';
+bctx2.fillText('(投入雪熊肉)', 128, 90);
+const baitSignMeshB = new THREE.Mesh(new THREE.PlaneGeometry(1.8, 0.9), new THREE.MeshBasicMaterial({
+  map: new THREE.CanvasTexture(baitTextB),
+  transparent: true
+}));
+baitSignMeshB.rotation.x = -Math.PI / 2;
+baitSignMeshB.position.set(0, 0.16, 15);
+scene.add(baitSignMeshB);
+
+// Giant Mutant Shark / Electric Eel
+class GiantMutantShark {
+  constructor() {
+    this.group = new THREE.Group();
+    this.maxHp = 500;
+    this.hp = 500;
+    this.state = 'SWIMMING'; // 'SWIMMING', 'EMERGED', 'DEAD'
+
+    // Massive Body
+    const bodyGeo = new THREE.ConeGeometry(2.4, 7.5, 8);
+    const bodyMat = new THREE.MeshStandardMaterial({ color: 0x14213d, roughness: 0.2, metalness: 0.5, flatShading: true });
+    this.body = new THREE.Mesh(bodyGeo, bodyMat);
+    this.body.rotation.x = Math.PI / 2;
+    this.body.position.y = 1.0;
+    this.group.add(this.body);
+
+    // Glowing electric dorsal fin
+    const finGeo = new THREE.BoxGeometry(0.2, 2.2, 1.8);
+    const finMat = new THREE.MeshBasicMaterial({ color: 0x00f5d4 });
+    const fin = new THREE.Mesh(finGeo, finMat);
+    fin.position.set(0, 2.4, -0.5);
+    this.group.add(fin);
+
+    // HP Bar
+    this.hpBarBg = new THREE.Mesh(new THREE.PlaneGeometry(3.5, 0.35), new THREE.MeshBasicMaterial({ color: 0x222222 }));
+    this.hpBarFill = new THREE.Mesh(new THREE.PlaneGeometry(3.46, 0.3), new THREE.MeshBasicMaterial({ color: 0x9d4edd }));
+    this.hpBarBg.position.y = 4.2;
+    this.hpBarFill.position.set(0, 4.2, 0.01);
+    this.group.add(this.hpBarBg);
+    this.group.add(this.hpBarFill);
+
+    this.group.position.set(0, -0.5, 28);
+    scene.add(this.group);
+  }
+
+  summon() {
+    this.hp = this.maxHp;
+    this.state = 'EMERGED';
+    this.group.position.set(0, 0.5, 23);
+    spawnFloatingText(this.group.position.clone().add(new THREE.Vector3(0, 4, 0)), "⚡ 變異巨鯊破冰竄出!!", "dmg");
+  }
+
+  takeDamage(amt) {
+    if (this.state === 'DEAD') return;
+    this.hp -= amt;
+    audio.playHit();
+    spawnFloatingText(this.group.position.clone().add(new THREE.Vector3((Math.random()-0.5)*2, 3.5, 0)), `-${amt}`, "dmg");
+
+    if (this.hp <= 0) {
+      this.die();
+    }
+  }
+
+  die() {
+    this.state = 'DEAD';
+    this.group.position.y = -2;
+    spawnFloatingText(new THREE.Vector3(0, 2, 17), "🎉 成功擊殺變異巨鯊!! 爆出天價肉塊!", "info");
+
+    // Drops 8 mutant shark meats on shore
+    for (let i = 0; i < 8; i++) {
+      const meat = createSharkMeatMesh();
+      meat.userData = { type: 'SHARK_MEAT' };
+      const targetPos = new THREE.Vector3((i - 3.5) * 1.2, 0.25, 16 + (Math.random() - 0.5) * 1.5);
+      addParabolaTween({
+        object: meat,
+        startPos: this.group.position.clone().add(new THREE.Vector3(0, 2, 0)),
+        targetPos: targetPos,
+        arcHeight: 3.5,
+        duration: 0.6,
+        onComplete: () => {
+          droppedSharkMeats.push(meat);
+        }
+      });
+    }
+
+    // Reset back to deep swimming after 6 seconds
+    setTimeout(() => {
+      this.state = 'SWIMMING';
+      this.group.position.set(0, -0.5, 28);
+    }, 6000);
+  }
+
+  update(dt) {
+    this.hpBarBg.lookAt(camera.position);
+    this.hpBarFill.lookAt(camera.position);
+    const pct = Math.max(0, this.hp / this.maxHp);
+    this.hpBarFill.scale.x = pct;
+
+    if (this.state === 'SWIMMING') {
+      const t = Date.now() * 0.0015;
+      this.group.position.x = Math.sin(t) * 9;
+      this.group.position.z = 28 + Math.cos(t) * 6;
+      this.group.rotation.y = -t + Math.PI / 2;
+      this.group.position.y = -0.5 + Math.sin(Date.now() * 0.005) * 0.2;
+    } else if (this.state === 'EMERGED') {
+      // Attacks player if player ventures too close to water shore (< 4m)
+      const distToPlayer = this.group.position.distanceTo(player.group.position);
+      if (distToPlayer < 6.5) {
+        player.takeDamage(40);
+        spawnFloatingText(player.group.position, "⚡ 遭受巨鯊電擊猛咬!!", "dmg");
+      }
+      this.group.rotation.y = Math.sin(Date.now() * 0.003) * 0.4;
+      this.group.position.y = 0.5 + Math.sin(Date.now() * 0.008) * 0.4;
+    }
+  }
+}
+
+const giantShark = new GiantMutantShark();
+const droppedSharkMeats = [];
+
+// Heavy Rapid-Fire Ballista Tower (Heavy Automatic Crossbow Turret)
+class BallistaTower {
+  constructor() {
+    this.group = new THREE.Group();
+    this.group.position.set(-5, 0, 16);
+    this.shootCooldown = 0;
+
+    // Stone base
+    const base = new THREE.Mesh(new THREE.CylinderGeometry(1.6, 2.0, 3.0, 8), materials.metalDark);
+    base.position.y = 1.5;
+    base.castShadow = true;
+    this.group.add(base);
+
+    // Rotating crossbow head
+    this.head = new THREE.Group();
+    this.head.position.y = 3.2;
+
+    const bowBody = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.5, 2.4), materials.woodPlank);
+    this.head.add(bowBody);
+
+    const bowArms = new THREE.Mesh(new THREE.BoxGeometry(3.6, 0.2, 0.3), materials.metalBlade);
+    bowArms.position.z = -0.8;
+    this.head.add(bowArms);
+
+    this.group.add(this.head);
+    this.group.visible = false; // Hidden until unlocked
+    scene.add(this.group);
+  }
+
+  update(dt) {
+    if (!GAME_STATE.unlocked.ballista) return;
+
+    if (giantShark.state === 'EMERGED') {
+      // Rotate head toward shark
+      const targetPos = giantShark.group.position;
+      const angle = Math.atan2(targetPos.x - this.group.position.x, targetPos.z - this.group.position.z);
+      this.head.rotation.y = angle;
+
+      // Rapid fire harpoons (every 0.35s)
+      this.shootCooldown += dt;
+      if (this.shootCooldown >= 0.35) {
+        this.shootCooldown = 0;
+        this.fireHarpoon(targetPos);
+      }
+    }
+  }
+
+  fireHarpoon(targetPos) {
+    audio.playShoot();
+    const harpoon = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 2.5, 6), materials.metalBlade);
+    harpoon.rotation.x = Math.PI / 2;
+    harpoon.position.copy(this.group.position).add(new THREE.Vector3(0, 3.2, 0));
+    scene.add(harpoon);
+
+    const startPos = harpoon.position.clone();
+    const endPos = targetPos.clone().add(new THREE.Vector3((Math.random()-0.5)*1.5, 1.0, (Math.random()-0.5)*1.5));
+
+    addParabolaTween({
+      object: harpoon,
+      startPos: startPos,
+      targetPos: endPos,
+      arcHeight: 1.0,
+      duration: 0.25,
+      onComplete: () => {
+        scene.remove(harpoon);
+        giantShark.takeDamage(55);
+      }
+    });
+  }
+}
+
+const ballistaTower = new BallistaTower();
+
+/* ==========================================================================
+   PLAYER CHARACTER & CONTROLLER (Stacking & Touch/Virtual Joystick Support)
+   ========================================================================== */
+class PlayerCharacter {
+  constructor() {
+    this.group = new THREE.Group();
+    this.maxHp = 100;
+    this.hp = 100;
+    this.speed = 9.0;
+    this.isDead = false;
+    this.weaponSwingTime = 0;
+
+    // Body: Low-poly Arctic Parka
+    const parkaGeo = new THREE.CylinderGeometry(0.45, 0.6, 1.2, 8);
+    const parkaMat = new THREE.MeshLambertMaterial({ color: 0x023e8a, flatShading: true });
+    this.body = new THREE.Mesh(parkaGeo, parkaMat);
+    this.body.position.y = 0.8;
+    this.body.castShadow = true;
+    this.group.add(this.body);
+
+    // Warm Fur Hood & Head
+    const hoodGeo = new THREE.SphereGeometry(0.48, 8, 8);
+    const hoodMat = new THREE.MeshLambertMaterial({ color: 0xffffff, flatShading: true });
+    this.hood = new THREE.Mesh(hoodGeo, hoodMat);
+    this.hood.position.y = 1.6;
+    this.group.add(this.hood);
+
+    // Face
+    const faceGeo = new THREE.SphereGeometry(0.3, 8, 8);
+    const faceMat = new THREE.MeshLambertMaterial({ color: 0xfbc4ab, flatShading: true });
+    const face = new THREE.Mesh(faceGeo, faceMat);
+    face.position.set(0, 1.6, 0.28);
+    this.group.add(face);
+
+    // Backpack Frame (Vertical Stacking Anchor)
+    this.stackAnchor = new THREE.Group();
+    this.stackAnchor.position.set(0, 0.8, -0.45);
+    this.group.add(this.stackAnchor);
+
+    // Weapon (Survival Axe / Sword)
+    this.weaponGroup = new THREE.Group();
+    this.weaponGroup.position.set(0.65, 0.9, 0.3);
+    const blade = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.6, 0.35), materials.metalBlade);
+    const handle = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 1.1, 6), materials.woodFence);
+    this.weaponGroup.add(blade);
+    this.weaponGroup.add(handle);
+    this.group.add(this.weaponGroup);
+
+    // Player 3D Health Bar
+    this.hpBarBg = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 0.18), new THREE.MeshBasicMaterial({ color: 0x111111 }));
+    this.hpBarFill = new THREE.Mesh(new THREE.PlaneGeometry(1.56, 0.14), new THREE.MeshBasicMaterial({ color: 0x55ff55 }));
+    this.hpBarBg.position.y = 2.4;
+    this.hpBarFill.position.set(0, 2.4, 0.01);
+    this.group.add(this.hpBarBg);
+    this.group.add(this.hpBarFill);
+
+    this.group.position.set(0, 0, 0);
+    scene.add(this.group);
+  }
+
+  takeDamage(amt) {
+    if (this.isDead) return;
+    this.hp -= amt;
+    audio.playHit();
+    spawnFloatingText(this.group.position, `-${amt} HP!`, "dmg");
+
+    if (this.hp <= 0) {
+      this.die();
+    }
+  }
+
+  die() {
+    this.isDead = true;
+    this.hp = 0;
+    const banner = document.getElementById('respawn-banner');
+    banner.classList.add('active');
+
+    // Drop items
+    while (GAME_STATE.backpack.length > 0) {
+      const item = GAME_STATE.backpack.pop();
+      this.stackAnchor.remove(item.mesh);
+      scene.remove(item.mesh);
+    }
+    updateHUD();
+
+    setTimeout(() => {
+      this.group.position.set(0, 0, 0);
+      this.hp = this.maxHp;
+      this.isDead = false;
+      banner.classList.remove('active');
+      spawnFloatingText(new THREE.Vector3(0, 2, 0), "復原完畢!", "info");
+    }, 1600);
+  }
+
+  refreshStackVisual() {
+    // Re-stack all backpack items vertically
+    GAME_STATE.backpack.forEach((item, idx) => {
+      item.mesh.position.set(0, idx * 0.38, 0);
+      item.mesh.rotation.set(0, 0, 0);
+    });
+  }
+
+  addItemToBackpack(type, fromWorldPos) {
+    if (GAME_STATE.backpack.length >= GAME_STATE.maxBackpack) return false;
+    audio.playPop();
+
+    const mesh = createItemMeshByType(type);
+    const targetIdx = GAME_STATE.backpack.length;
+    GAME_STATE.backpack.push({ type, mesh });
+    updateHUD();
+
+    const targetLocal = new THREE.Vector3(0, targetIdx * 0.38, 0);
+    const targetWorld = this.stackAnchor.localToWorld(targetLocal.clone());
+
+    addParabolaTween({
+      object: mesh,
+      startPos: fromWorldPos.clone(),
+      targetPos: targetWorld,
+      arcHeight: 1.8,
+      duration: 0.35,
+      onComplete: () => {
+        this.stackAnchor.add(mesh);
+        mesh.position.copy(targetLocal);
+        mesh.rotation.set(0, 0, 0);
+      }
+    });
+    return true;
+  }
+
+  removeItemFromBackpack(targetWorldPos, onComplete) {
+    if (GAME_STATE.backpack.length === 0) return null;
+    const item = GAME_STATE.backpack.pop();
+    updateHUD();
+
+    const currentWorld = this.stackAnchor.localToWorld(item.mesh.position.clone());
+    this.stackAnchor.remove(item.mesh);
+    scene.add(item.mesh);
+
+    addParabolaTween({
+      object: item.mesh,
+      startPos: currentWorld,
+      targetPos: targetWorldPos,
+      arcHeight: 2.0,
+      duration: 0.35,
+      onComplete: () => {
+        if (onComplete) onComplete(item);
+      }
+    });
+    this.refreshStackVisual();
+    return item;
+  }
+
+  update(dt, moveInput) {
+    if (this.isDead) return;
+
+    // HP Bar
+    this.hpBarBg.lookAt(camera.position);
+    this.hpBarFill.lookAt(camera.position);
+    const hpPct = Math.max(0, this.hp / this.maxHp);
+    this.hpBarFill.scale.x = hpPct;
+    this.hpBarFill.material.color.setHex(hpPct > 0.4 ? 0x55ff55 : 0xff3333);
+
+    // Movement
+    if (moveInput.length() > 0.05) {
+      const move = moveInput.clone().normalize().multiplyScalar(this.speed * dt);
+      this.group.position.add(move);
+
+      // Rotate smoothly towards movement
+      const targetAngle = Math.atan2(moveInput.x, moveInput.z);
+      this.group.rotation.y = targetAngle;
+
+      // Walk wobble
+      const t = Date.now() * 0.015;
+      this.group.position.y = Math.abs(Math.sin(t)) * 0.18;
+      this.body.rotation.z = Math.sin(t) * 0.08;
+    } else {
+      this.group.position.y = 0;
+      this.body.rotation.z = 0;
+    }
+
+    // Auto-attack Snow Bear if nearby
+    if (snowBear.state === 'FIGHTING' || snowBear.state === 'WALKING_TO_BAIT') {
+      const dist = this.group.position.distanceTo(snowBear.group.position);
+      if (dist < 3.8) {
+        this.weaponSwingTime += dt * 10;
+        this.weaponGroup.rotation.x = Math.sin(this.weaponSwingTime) * 1.2;
+        // Hit bear
+        if (Math.sin(this.weaponSwingTime) > 0.9) {
+          snowBear.takeDamage(20, this.group.position);
+        }
+      } else {
+        this.weaponGroup.rotation.x = 0;
+      }
+    } else {
+      this.weaponGroup.rotation.x = 0;
+    }
+  }
+}
+
+const player = new PlayerCharacter();
+
+/* ==========================================================================
+   INPUT CONTROLS: KEYBOARD, TOUCH DRAG & VIRTUAL JOYSTICK
+   ========================================================================== */
+const moveInput = new THREE.Vector3(0, 0, 0);
+const keys = { w: false, a: false, s: false, d: false, ArrowUp: false, ArrowLeft: false, ArrowDown: false, ArrowRight: false };
+
+window.addEventListener('keydown', (e) => {
+  if (keys[e.key] !== undefined) keys[e.key] = true;
+});
+window.addEventListener('keyup', (e) => {
+  if (keys[e.key] !== undefined) keys[e.key] = false;
+});
+
+// Touch / Finger Follow & Virtual Joystick Handler
+const joystickZone = document.getElementById('joystick-zone');
+const joystickBase = document.getElementById('joystick-base');
+const joystickKnob = document.getElementById('joystick-knob');
+
+let touchActive = false;
+let touchOrigin = { x: 0, y: 0 };
+let touchCurrent = { x: 0, y: 0 };
+const maxJoystickRadius = 55;
+
+function handlePointerDown(clientX, clientY) {
+  touchActive = true;
+  touchOrigin = { x: clientX, y: clientY };
+  touchCurrent = { x: clientX, y: clientY };
+
+  joystickBase.style.left = `${clientX}px`;
+  joystickBase.style.top = `${clientY}px`;
+  joystickBase.style.display = 'block';
+  joystickKnob.style.transform = `translate(0px, 0px)`;
+}
+
+function handlePointerMove(clientX, clientY) {
+  if (!touchActive) return;
+  touchCurrent = { x: clientX, y: clientY };
+
+  const dx = touchCurrent.x - touchOrigin.x;
+  const dy = touchCurrent.y - touchOrigin.y;
+  const dist = Math.hypot(dx, dy);
+
+  // If dragged further than radius, pull origin so joystick follows finger fluidly
+  if (dist > maxJoystickRadius) {
+    const angle = Math.atan2(dy, dx);
+    touchOrigin.x = touchCurrent.x - Math.cos(angle) * maxJoystickRadius;
+    touchOrigin.y = touchCurrent.y - Math.sin(angle) * maxJoystickRadius;
+    joystickBase.style.left = `${touchOrigin.x}px`;
+    joystickBase.style.top = `${touchOrigin.y}px`;
+  }
+
+  const curDx = touchCurrent.x - touchOrigin.x;
+  const curDy = touchCurrent.y - touchOrigin.y;
+  const curDist = Math.hypot(curDx, curDy);
+  const clampedDist = Math.min(curDist, maxJoystickRadius);
+  const curAngle = Math.atan2(curDy, curDx);
+
+  const knobX = Math.cos(curAngle) * clampedDist;
+  const knobY = Math.sin(curAngle) * clampedDist;
+
+  joystickKnob.style.transform = `translate(${knobX}px, ${knobY}px)`;
+
+  // Transform screen vector (45 degree camera isometric rotation)
+  const normX = knobX / maxJoystickRadius;
+  const normY = knobY / maxJoystickRadius;
+
+  // Rotate screen coords by -45 degrees for isometric projection alignment
+  const isoCos = Math.cos(Math.PI / 4);
+  const isoSin = Math.sin(Math.PI / 4);
+  moveInput.x = normX * isoCos + normY * isoSin;
+  moveInput.z = -normX * isoSin + normY * isoCos;
+}
+
+function handlePointerUp() {
+  touchActive = false;
+  joystickBase.style.display = 'none';
+  moveInput.set(0, 0, 0);
+}
+
+// Touch listeners (prevent scrolling & default browser gestures)
+joystickZone.addEventListener('touchstart', (e) => {
+  e.preventDefault();
+  const touch = e.touches[0];
+  handlePointerDown(touch.clientX, touch.clientY);
+}, { passive: false });
+
+window.addEventListener('touchmove', (e) => {
+  if (!touchActive) return;
+  const touch = e.touches[0];
+  handlePointerMove(touch.clientX, touch.clientY);
+}, { passive: false });
+
+window.addEventListener('touchend', (e) => {
+  handlePointerUp();
+});
+window.addEventListener('touchcancel', (e) => {
+  handlePointerUp();
+});
+
+// Mouse Drag listeners (desktop support)
+let isMouseDown = false;
+joystickZone.addEventListener('mousedown', (e) => {
+  isMouseDown = true;
+  handlePointerDown(e.clientX, e.clientY);
+});
+window.addEventListener('mousemove', (e) => {
+  if (!isMouseDown) return;
+  handlePointerMove(e.clientX, e.clientY);
+});
+window.addEventListener('mouseup', () => {
+  if (isMouseDown) {
+    isMouseDown = false;
+    handlePointerUp();
+  }
+});
+
+/* ==========================================================================
+   INTERACTION & COLLISION TRIGGERS (Auto Pickup & Deposit)
+   ========================================================================== */
+let payTimer = 0;
+
+function checkInteractions(dt) {
+  const pPos = player.group.position;
+
+  // 1. Stand on Raw Fish Pile: Pickup Raw Fish
+  if (pPos.distanceTo(rawFishPileAnchor) < 2.5) {
+    if (rawFishPile.length > 0 && GAME_STATE.backpack.length < GAME_STATE.maxBackpack) {
+      const fish = rawFishPile.shift();
+      refreshRawFishPileVisual();
+      player.addItemToBackpack('RAW_FISH', fish.position);
+      scene.remove(fish);
+    }
+  }
+
+  // 2. Stand on Cutter In-tray: Deposit Raw Fish into cutter
+  if (pPos.distanceTo(cutterInPos) < 2.0) {
+    if (cutterInItems.length < 6 && GAME_STATE.backpack.some(i => i.type === 'RAW_FISH')) {
+      const idx = GAME_STATE.backpack.findIndex(i => i.type === 'RAW_FISH');
+      const item = GAME_STATE.backpack.splice(idx, 1)[0];
+      updateHUD();
+      player.refreshStackVisual();
+
+      const startWorld = player.stackAnchor.localToWorld(item.mesh.position.clone());
+      player.stackAnchor.remove(item.mesh);
+
+      const targetPos = cutterInPos.clone().add(new THREE.Vector3(0, 0.2 * cutterInItems.length, 0));
+      addParabolaTween({
+        object: item.mesh,
+        startPos: startWorld,
+        targetPos: targetPos,
+        arcHeight: 1.5,
+        duration: 0.35,
+        onComplete: () => {
+          cutterInItems.push(item.mesh);
+        }
+      });
+    }
+  }
+
+  // 3. Stand on Cutter Out-tray: Pickup Sliced Fish
+  if (pPos.distanceTo(cutterOutPos) < 2.0) {
+    if (cutterOutItems.length > 0 && GAME_STATE.backpack.length < GAME_STATE.maxBackpack) {
+      const item = cutterOutItems.shift();
+      player.addItemToBackpack('SLICED_FISH', item.position);
+      scene.remove(item);
+    }
+  }
+
+  // 4. Stand on Counter #1: Deposit Sliced Fish
+  if (pPos.distanceTo(new THREE.Vector3(4, 0, -4)) < 2.4) {
+    if (counter1Stock.length < 8 && GAME_STATE.backpack.some(i => i.type === 'SLICED_FISH')) {
+      const idx = GAME_STATE.backpack.findIndex(i => i.type === 'SLICED_FISH');
+      const item = GAME_STATE.backpack.splice(idx, 1)[0];
+      updateHUD();
+      player.refreshStackVisual();
+
+      const startWorld = player.stackAnchor.localToWorld(item.mesh.position.clone());
+      player.stackAnchor.remove(item.mesh);
+
+      const targetPos = new THREE.Vector3(3.4, 1.4 + 0.2 * counter1Stock.length, -4);
+      addParabolaTween({
+        object: item.mesh,
+        startPos: startWorld,
+        targetPos: targetPos,
+        arcHeight: 1.5,
+        duration: 0.35,
+        onComplete: () => {
+          counter1Stock.push(item.mesh);
+        }
+      });
+    }
+  }
+
+  // 5. Stand on Cash Zone 1: Collect Banknotes
+  if (pPos.distanceTo(cashZone1Pos) < 2.2) {
+    while (cashBills1.length > 0) {
+      const bill = cashBills1.shift();
+      const val = bill.userData.value || 20;
+      addParabolaTween({
+        object: bill,
+        startPos: bill.position.clone(),
+        targetPos: pPos.clone().add(new THREE.Vector3(0, 1.2, 0)),
+        arcHeight: 1.5,
+        duration: 0.25,
+        onComplete: () => {
+          scene.remove(bill);
+          addMoney(val);
+          spawnFloatingText(pPos, `+$${val}`, "money");
+        }
+      });
+    }
+  }
+
+  // 6. Stand on Counter #2: Deposit Bear Meat or Shark Meat
+  if (GAME_STATE.unlocked.counter2 && pPos.distanceTo(new THREE.Vector3(4, 0, 4)) < 2.4) {
+    const meatIdx = GAME_STATE.backpack.findIndex(i => i.type === 'BEAR_MEAT' || i.type === 'SHARK_MEAT');
+    if (meatIdx !== -1 && counter2Stock.length < 8) {
+      const item = GAME_STATE.backpack.splice(meatIdx, 1)[0];
+      updateHUD();
+      player.refreshStackVisual();
+
+      const startWorld = player.stackAnchor.localToWorld(item.mesh.position.clone());
+      player.stackAnchor.remove(item.mesh);
+
+      const targetPos = new THREE.Vector3(3.4, 1.4 + 0.25 * counter2Stock.length, 4);
+      addParabolaTween({
+        object: item.mesh,
+        startPos: startWorld,
+        targetPos: targetPos,
+        arcHeight: 1.5,
+        duration: 0.35,
+        onComplete: () => {
+          item.mesh.userData = { type: item.type };
+          counter2Stock.push(item.mesh);
+        }
+      });
+    }
+  }
+
+  // 7. Stand on Cash Zone 2: Collect Premium Cash
+  if (GAME_STATE.unlocked.counter2 && pPos.distanceTo(cashZone2Pos) < 2.2) {
+    while (cashBills2.length > 0) {
+      const bill = cashBills2.shift();
+      const val = bill.userData.value || 60;
+      addParabolaTween({
+        object: bill,
+        startPos: bill.position.clone(),
+        targetPos: pPos.clone().add(new THREE.Vector3(0, 1.2, 0)),
+        arcHeight: 1.5,
+        duration: 0.25,
+        onComplete: () => {
+          scene.remove(bill);
+          addMoney(val);
+          spawnFloatingText(pPos, `+$${val}`, "money");
+        }
+      });
+    }
+  }
+
+  // 8. Stand on Bait Pad A (North): Place Sliced Fish to summon Snow Bear
+  if (pPos.distanceTo(baitPadAPos) < 2.2) {
+    if (!baitPlacedOnPadA && snowBear.state === 'DEAD' && snowBear.respawnCooldown <= 0) {
+      const fishIdx = GAME_STATE.backpack.findIndex(i => i.type === 'SLICED_FISH');
+      if (fishIdx !== -1) {
+        const item = GAME_STATE.backpack.splice(fishIdx, 1)[0];
+        updateHUD();
+        player.refreshStackVisual();
+
+        const startWorld = player.stackAnchor.localToWorld(item.mesh.position.clone());
+        player.stackAnchor.remove(item.mesh);
+
+        addParabolaTween({
+          object: item.mesh,
+          startPos: startWorld,
+          targetPos: baitPadAPos.clone().add(new THREE.Vector3(0, 0.3, 0)),
+          arcHeight: 1.5,
+          duration: 0.35,
+          onComplete: () => {
+            baitPlacedOnPadA = true;
+            snowBear.summon();
+            setTimeout(() => scene.remove(item.mesh), 2000);
+          }
+        });
+      }
+    }
+  }
+
+  // 9. Pickup Dropped Bear Meat on Ground
+  for (let i = droppedBearMeats.length - 1; i >= 0; i--) {
+    const meat = droppedBearMeats[i];
+    if (pPos.distanceTo(meat.position) < 2.0 && GAME_STATE.backpack.length < GAME_STATE.maxBackpack) {
+      droppedBearMeats.splice(i, 1);
+      player.addItemToBackpack('BEAR_MEAT', meat.position);
+      scene.remove(meat);
+    }
+  }
+
+  // 10. Stand on Bait Pad B (South): Place Bear Meat to summon Giant Mutant Shark
+  if (pPos.distanceTo(baitPadBPos) < 2.2) {
+    if (giantShark.state === 'SWIMMING') {
+      const bearMeatIdx = GAME_STATE.backpack.findIndex(i => i.type === 'BEAR_MEAT');
+      if (bearMeatIdx !== -1) {
+        const item = GAME_STATE.backpack.splice(bearMeatIdx, 1)[0];
+        updateHUD();
+        player.refreshStackVisual();
+
+        const startWorld = player.stackAnchor.localToWorld(item.mesh.position.clone());
+        player.stackAnchor.remove(item.mesh);
+
+        addParabolaTween({
+          object: item.mesh,
+          startPos: startWorld,
+          targetPos: baitPadBPos.clone().add(new THREE.Vector3(0, 0.3, 0)),
+          arcHeight: 1.5,
+          duration: 0.35,
+          onComplete: () => {
+            giantShark.summon();
+            setTimeout(() => scene.remove(item.mesh), 2000);
+          }
+        });
+      }
+    }
+  }
+
+  // 11. Pickup Dropped Shark Meat on Shore
+  for (let i = droppedSharkMeats.length - 1; i >= 0; i--) {
+    const meat = droppedSharkMeats[i];
+    if (pPos.distanceTo(meat.position) < 2.0 && GAME_STATE.backpack.length < GAME_STATE.maxBackpack) {
+      droppedSharkMeats.splice(i, 1);
+      player.addItemToBackpack('SHARK_MEAT', meat.position);
+      scene.remove(meat);
+    }
+  }
+
+  // 12. Unlock Pads: Pay money every 0.05s
+  payTimer += dt;
+  if (payTimer >= 0.05) {
+    payTimer = 0;
+    unlockPads.forEach(pad => {
+      if (!pad.isUnlocked && pPos.distanceTo(pad.position) < 2.0) {
+        if (GAME_STATE.money > 0) {
+          const paid = pad.tryPay(GAME_STATE.money);
+          if (paid > 0) {
+            GAME_STATE.money -= paid;
+            updateHUD();
+          }
+        }
+      }
+    });
+  }
+}
+
+/* ==========================================================================
+   MAIN GAME LOOP (requestAnimationFrame)
+   ========================================================================== */
+let lastTime = performance.now();
+const cameraTargetPos = new THREE.Vector3();
+
+function gameLoop(now) {
+  requestAnimationFrame(gameLoop);
+
+  const dt = Math.min((now - lastTime) / 1000, 0.1);
+  lastTime = now;
+
+  // Process keyboard movement if touch isn't driving
+  if (!touchActive) {
+    let kx = 0;
+    let kz = 0;
+    if (keys.w || keys.ArrowUp) { kx -= 1; kz -= 1; }
+    if (keys.s || keys.ArrowDown) { kx += 1; kz += 1; }
+    if (keys.a || keys.ArrowLeft) { kx -= 1; kz += 1; }
+    if (keys.d || keys.ArrowRight) { kx += 1; kz -= 1; }
+
+    if (kx !== 0 || kz !== 0) {
+      moveInput.set(kx, 0, kz).normalize();
+    } else {
+      moveInput.set(0, 0, 0);
+    }
+  }
+
+  // Update Player
+  player.update(dt, moveInput);
+
+  // Smooth Camera Follow (Lerp to 45 degree isometric perspective)
+  cameraTargetPos.copy(player.group.position).add(new THREE.Vector3(20, 26, 20));
+  camera.position.lerp(cameraTargetPos, 0.08);
+  camera.lookAt(player.group.position.x, 1.0, player.group.position.z);
+
+  // Update Parabola Tweens
+  updateTweens(dt);
+
+  // Rotate Saw Blade
+  sawGroup.rotation.x += dt * 15;
+
+  // Update Citizen NPCs
+  for (let i = citizensLine1.length - 1; i >= 0; i--) {
+    if (citizensLine1[i].update(dt)) citizensLine1.splice(i, 1);
+  }
+  for (let i = citizensLine2.length - 1; i >= 0; i--) {
+    if (citizensLine2[i].update(dt)) citizensLine2.splice(i, 1);
+  }
+
+  // Update Snow Bear
+  snowBear.update(dt);
+  if (snowBear.state === 'DEAD' && snowBear.respawnCooldown <= 0) {
+    baitPlacedOnPadA = false;
+  }
+
+  // Update Mercenaries
+  mercenaries.forEach(m => m.update(dt));
+
+  // Update Giant Shark & Ballista Tower
+  giantShark.update(dt);
+  ballistaTower.update(dt);
+
+  // Check Proximity Interactivity & Automation
+  checkInteractions(dt);
+
+  // Snow Particle Motion
+  const positions = snowParticles.geometry.attributes.position.array;
+  for (let i = 1; i < positions.length; i += 3) {
+    positions[i] -= dt * 4;
+    if (positions[i] < 0) positions[i] = 30;
+  }
+  snowParticles.geometry.attributes.position.needsUpdate = true;
+
+  // Render Scene
+  renderer.render(scene, camera);
+}
+
+// Start Game Loop
+updateHUD();
+requestAnimationFrame(gameLoop);
+</script>
+</body>
+</html>
